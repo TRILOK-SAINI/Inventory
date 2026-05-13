@@ -224,7 +224,7 @@ const ViewModal = ({ product, onClose, navigate }) => {
 ═══════════════════════════════════════════════════════════════ */
 const CATEGORIES = ["Electronics","Clothing","Footwear","Home & Living","Beauty","Sports","Books","Toys","Food","Accessories","Other"];
 
-const API = "/api";   // Vite proxy forwards this to http://localhost:5000
+// const API = "/api";   // Vite proxy forwards this to http://localhost:5000
 
 export default function ProductList() {
   const navigate = useNavigate();
