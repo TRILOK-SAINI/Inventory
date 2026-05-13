@@ -1,0 +1,264 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+    DARK THEME  (default)
+  ═══════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="dark"] {
+  --bg-base: #020209;
+  --bg-surface: #0a0a14;
+  --bg-elevated: #0f1629;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+
+  --border: rgba(255, 255, 255, 0.07);
+  --border-sub: rgba(255, 255, 255, 0.04);
+
+  --text-primary: #f1f1f5;
+  --text-sec: #94a3b8;
+  --text-muted: #475569;
+
+  --accent: #6366f1;
+  --accent-soft: rgba(99, 102, 241, 0.12);
+  --accent-border: rgba(99, 102, 241, 0.22);
+  --accent-text: #a5b4fc;
+
+  --danger-text: #f87171;
+  --danger-soft: rgba(239, 68, 68, 0.08);
+  --danger-border: rgba(239, 68, 68, 0.18);
+
+  --topbar-bg: #05050f;
+  --sidebar-bg: #05050f;
+  --topbar-border: rgba(255, 255, 255, 0.06);
+
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+    LIGHT THEME
+  ═══════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  --bg-base: #eef1fb;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f8faff;
+  --bg-hover: rgba(79, 70, 229, 0.06);
+
+  --border: rgba(79, 70, 229, 0.12);
+  --border-sub: rgba(79, 70, 229, 0.06);
+
+  --text-primary: #0f172a;
+  --text-sec: #475569;
+  --text-muted: #94a3b8;
+
+  --accent: #4f46e5;
+  --accent-soft: rgba(79, 70, 229, 0.08);
+  --accent-border: rgba(79, 70, 229, 0.22);
+  --accent-text: #4338ca;
+
+  --danger-text: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.06);
+  --danger-border: rgba(220, 38, 38, 0.18);
+
+  --topbar-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+  --topbar-border: rgba(79, 70, 229, 0.1);
+
+  --shadow: 0 2px 16px rgba(79, 70, 229, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+    BASE RESET
+  ═══════════════════════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.2s ease;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+    SCROLLBAR
+  ═══════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+    REUSABLE THEME CLASSES  (used in JSX as className)
+  ═══════════════════════════════════════════════════════════════ */
+
+/* Layout surfaces */
+.t-base {
+  background-color: var(--bg-base);
+}
+.t-surface {
+  background-color: var(--bg-surface);
+}
+.t-elevated {
+  background-color: var(--bg-elevated);
+}
+
+.t-bg {
+  background-color: var(--bg-base);
+}
+
+/* Topbar & Sidebar shells */
+.t-topbar {
+  background-color: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+  box-shadow: var(--shadow);
+  transition:
+    background-color 0.3s,
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+.t-sidebar {
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  transition:
+    background-color 0.3s,
+    border-color 0.3s;
+}
+
+/* Card */
+.t-card {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border);
+  transition:
+    background-color 0.3s,
+    border-color 0.3s;
+}
+
+/* Text helpers */
+.t-text {
+  color: var(--text-primary);
+}
+.t-text-sec {
+  color: var(--text-sec);
+}
+.t-text-muted {
+  color: var(--text-muted);
+}
+
+/* Accent helpers */
+.t-accent-text {
+  color: var(--accent-text);
+}
+.t-accent-bg {
+  background-color: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+/* Sidebar nav link */
+.t-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.15s;
+  color: var(--text-sec);
+  border: 1px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.t-nav-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-hover);
+}
+
+.t-nav-link.active {
+  color: var(--accent-text);
+  background-color: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+/* Divider */
+.t-divider {
+  border-color: var(--border);
+}
+
+/* Icon button */
+.t-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.15s;
+  cursor: pointer;
+  color: var(--text-sec);
+  background: transparent;
+  border: none;
+}
+
+.t-icon-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-hover);
+}
+
+/* ========================================================================================================
+============================================================================================================
+========================================================================================================= */
+/* stgyle for intitution logos  */
+
+.institute-grid {
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+/* 📱 Mobile */
+@media (max-width: 768px) {
+  .lm-page {
+    padding: 16px !important;
+  }
+
+  .institute-grid {
+    grid-template-columns: 1fr; /* stack */
+  }
+}
+
+/* 📲 Small mobile */
+@media (max-width: 480px) {
+  .lm-page {
+    padding: 12px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .logo-form {
+    position: static !important;
+  }
+}
