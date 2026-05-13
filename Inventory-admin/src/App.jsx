@@ -5,7 +5,7 @@ import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 import AddProduct from "./pages/AddProduct";
-import ProductList from "./pages/Productlist";
+import ProductList from "./pages/ProductList";
 import EditProduct from "./pages/EditProduct";
 
 const ComingSoon = ({ name }) => (
