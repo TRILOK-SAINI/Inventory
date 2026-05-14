@@ -224,7 +224,7 @@ const ViewModal = ({ product, onClose, navigate }) => {
 ═══════════════════════════════════════════════════════════════ */
 const CATEGORIES = ["Electronics","Clothing","Footwear","Home & Living","Beauty","Sports","Books","Toys","Food","Accessories","Other"];
 
-// const API = "/api";   // Vite proxy forwards this to http://localhost:5000
+const API = import.meta.env.VITE_API_URL;   // Vite proxy forwards this to http://localhost:5000
 
 export default function ProductList() {
   const navigate = useNavigate();
@@ -253,7 +253,7 @@ export default function ProductList() {
       if (category) params.set("category", category);
       if (status)   params.set("status",   status);
 
-      const res  = await fetch(`/api/products?${params}`);
+      const res  = await fetch(`${API}/products?${params}`);
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       setProducts(data.data);
@@ -271,7 +271,7 @@ export default function ProductList() {
   const handleDelete = async () => {
     setDeleteLoading(true);
     try {
-      await fetch(`/api/products/${deleteTarget._id}`, { method: "DELETE" });
+      await fetch(`${API}/products/${deleteTarget._id}`, { method: "DELETE" });
       setDeleteTarget(null);
       fetchProducts(pagination.page);
     } finally {
@@ -283,7 +283,7 @@ export default function ProductList() {
   const handleBulkDelete = async () => {
     if (!selected.size) return;
     try {
-      await fetch("/api/products/bulk-delete", {
+      await fetch(`${API}/products/bulk-delete`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: [...selected] }),
@@ -300,7 +300,7 @@ export default function ProductList() {
     const next = product.status === "active" ? "inactive" : "active";
     setStatusLoading(product._id);
     try {
-      const res  = await fetch(`/api/products/${product._id}/status`, {
+      const res  = await fetch(`${API}/products/${product._id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: next }),

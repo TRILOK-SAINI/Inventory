@@ -125,6 +125,8 @@ const initialForm = {
 export default function AddProduct() {
   const navigate = useNavigate();
   const fileRef  = useRef(null);
+  const API = import.meta.env.VITE_API_URL;  
+
 
   const [form,     setForm]     = useState(initialForm);
   const [images,   setImages]   = useState([]);     // { file, preview }[]
@@ -191,7 +193,7 @@ export default function AddProduct() {
         fd.append(k, typeof v === "object" ? JSON.stringify(v) : v)
       );
 
-      const res = await fetch("http://localhost:5000/api/products", { method: "POST", body: fd });
+      const res = await fetch(`${API}/products`, { method: "POST", body: fd });
       console.log(res)
       const data = await res.json();
 

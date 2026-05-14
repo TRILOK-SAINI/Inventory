@@ -83,12 +83,13 @@ export default function EditProduct() {
   const [errors,    setErrors]    = useState({});
   const [loading,   setLoading]   = useState(false);
   const [dragging,  setDragging]  = useState(false);
+const API = import.meta.env.VITE_API_URL;   // Vite proxy forwards this to http://localhost:5000
 
   /* ── load product ────────────────────────────────────────── */
   useEffect(() => {
     (async () => {
       try {
-        const res  = await fetch(`/api/products/${id}`);
+        const res  = await fetch(`${API}/products/${id}`);
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
         const p = data.data;
@@ -175,7 +176,7 @@ export default function EditProduct() {
         fd.append(k, typeof v === "object" ? JSON.stringify(v) : v)
       );
 
-      const res  = await fetch(`/api/products/${id}`, { method: "PUT", body: fd });
+      const res  = await fetch(`${API}/products/${id}`, { method: "PUT", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Update failed");
       navigate("/admin/products");
