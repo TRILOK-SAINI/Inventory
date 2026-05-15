@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { FaBars, FaSignOutAlt, FaBell, FaSun, FaMoon } from "react-icons/fa";
 import { useTheme } from "../context/ThemeContext";
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const PAGE_NAMES = {
   dashboard: "Dashboard",
@@ -18,6 +19,7 @@ export default function Topbar({ toggleSidebar }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { logout, user } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   // Handle responsive check on resize
@@ -34,10 +36,15 @@ export default function Topbar({ toggleSidebar }) {
     return PAGE_NAMES[match] ?? "Dashboard";
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
+const handleLogout = async () => {
+  try {
+    await logout();
     navigate("/admin/login");
-  };
+  } 
+  catch (error) {
+    console.log(error);
+  }
+};
 
   const isDark = theme === "dark";
 
@@ -114,7 +121,7 @@ export default function Topbar({ toggleSidebar }) {
 
         <div className="hidden sm:flex items-center gap-3 pl-3 ml-1 border-l border-gray-200 dark:border-gray-700">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black bg-(--accent-soft) text-(--accent-text) border border-(--accent-border)">
-            A
+          {user?.name}
           </div>
           <button
             onClick={handleLogout}

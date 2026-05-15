@@ -1,44 +1,50 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
-const ADMIN_EMAIL = "admin@gmail.com";
-const ADMIN_PASSWORD = "admin";
+
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login, user } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (localStorage.getItem("adminAuth") === "true") {
-      navigate("/admin/dashboard", { replace: true });
-    }
-  }, [navigate]);
+useEffect(() => {
+  if (user?.role === "super_admin") {
+    navigate("/admin/dashboard", { replace: true });
+  }
+}, [user, navigate]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    setTimeout(() => {
-      if (
-        formData.email === ADMIN_EMAIL &&
-        formData.password === ADMIN_PASSWORD
-      ) {
-        localStorage.setItem("adminAuth", "true");
-        navigate("/admin/dashboard");
-      } else {
-        setError("Invalid email or password!");
-        setLoading(false);
-      }
-    }, 600);
-  };
+  try {
+    const loggedInUser = await login(formData);
+
+    if (loggedInUser.role === "super_admin") {
+      toast.success("Login successful");
+      navigate("/admin/dashboard");
+    } else {
+      setError("Unauthorized role");
+    }
+  } catch (error) {
+    setError(
+      error.response?.data?.message || "Login failed"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen grid md:grid-cols-2 t-base">
