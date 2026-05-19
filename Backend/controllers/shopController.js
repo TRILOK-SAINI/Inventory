@@ -1,5 +1,5 @@
 import Shop from "../model/shop.js";
-import User from "../model/User.js";
+import User from "../model/user.js";
 
 const DEFAULT_SHOP_PASSWORD = "123456";
 
