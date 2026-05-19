@@ -13,6 +13,7 @@ import {
   FaTimes,
   FaCalendarAlt,
   FaStore,
+  FaStoreAlt,
 } from "react-icons/fa";
 
 const NAV_SECTIONS = [
@@ -107,6 +108,7 @@ const NavItem = ({ link, closeSidebar }) => {
     </NavLink>
   );
 };
+
 export default function Sidebar({ closeSidebar }) {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -124,9 +126,27 @@ export default function Sidebar({ closeSidebar }) {
                 path: "/admin/shop-dashboard",
                 icon: <FaStore />,
               },
+              {
+                name: "Staff",
+                path: "/admin/staff",
+                icon: <FaUsers />,
+              },
             ],
           },
         ]
+      : user?.role === "staff" 
+      ? [
+        {
+          label: "Staff",
+          links: [
+            {
+              name: "My Dashboard",
+              path: "/admin/staff-dashboard",
+              icon: <FaStoreAlt />,
+            },
+          ],
+        },
+      ]
       : NAV_SECTIONS.map((section) => ({
           ...section,
           links: [
@@ -163,7 +183,7 @@ export default function Sidebar({ closeSidebar }) {
                 className="font-black text-base tracking-tight"
                 style={{ color: "var(--text-primary)" }}
               >
-                Edu<span style={{ color: "var(--accent)" }}>AI</span>tor
+                Inv<span style={{ color: "var(--accent)" }}>ven</span>tory
               </span>
             ) : (
               // Light Mode: Show IMAGE only
@@ -171,7 +191,7 @@ export default function Sidebar({ closeSidebar }) {
                 className="font-black text-base tracking-tight"
                 style={{ color: "var(--text-primary)" }}
               >
-                Edu<span style={{ color: "var(--accent)" }}>AI</span>tor
+                Inv<span style={{ color: "var(--accent)" }}>ven</span>tory
               </span>
             )}
           </div>

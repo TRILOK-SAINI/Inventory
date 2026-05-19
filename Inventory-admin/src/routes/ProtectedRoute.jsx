@@ -1,6 +1,12 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const roleHomeRoutes = {
+  super_admin: "/admin/dashboard",
+  shop_admin: "/admin/shop-dashboard",
+  staff: "/admin/staff-dashboard",
+};
+
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, loading } = useAuth();
 
@@ -20,7 +26,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     allowedRoles.length > 0 &&
     !allowedRoles.includes(user.role)
   ) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to={roleHomeRoutes[user.role] || "/admin/login"} replace />;
   }
 
   return children;

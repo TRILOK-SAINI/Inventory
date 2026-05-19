@@ -17,6 +17,8 @@ export default function Login() {
       navigate("/admin/dashboard", { replace: true });
     } else if (user?.role === "shop_admin") {
       navigate("/admin/shop-dashboard", { replace: true });
+    } else if (user?.role === "staff") {
+      navigate("/admin/staff-dashboard", { replace: true });
     }
   }, [user, navigate]);
 
@@ -38,6 +40,9 @@ export default function Login() {
       } else if (loggedInUser.role === "shop_admin") {
         toast.success("Login successful");
         navigate("/admin/shop-dashboard");
+      } else if (loggedInUser.role === "staff") {
+        toast.success("Login successful");
+        navigate("/admin/staff-dashboard");
       } else {
         setError("Unauthorized role");
       }

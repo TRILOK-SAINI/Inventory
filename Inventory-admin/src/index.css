@@ -1,68 +1,72 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
-    DARK THEME  (default)
+    DARK THEME  (MYRA BRAND)
   ═══════════════════════════════════════════════════════════════ */
 :root,
 [data-theme="dark"] {
-  --bg-base: #020209;
-  --bg-surface: #0a0a14;
-  --bg-elevated: #0f1629;
-  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-base: #060b16;
+  --bg-surface: #0d1424;
+  --bg-elevated: #131c31;
+  --bg-hover: rgba(37, 99, 235, 0.08);
 
-  --border: rgba(255, 255, 255, 0.07);
+  --border: rgba(255, 255, 255, 0.08);
   --border-sub: rgba(255, 255, 255, 0.04);
 
-  --text-primary: #f1f1f5;
-  --text-sec: #94a3b8;
-  --text-muted: #475569;
+  --text-primary: #f8fafc;
+  --text-sec: #b6c2d1;
+  --text-muted: #64748b;
 
-  --accent: #6366f1;
-  --accent-soft: rgba(99, 102, 241, 0.12);
-  --accent-border: rgba(99, 102, 241, 0.22);
-  --accent-text: #a5b4fc;
+  /* Brand Colors */
+  --accent: #0ea5e9;
+  --accent-soft: rgba(14, 165, 233, 0.12);
+  --accent-border: rgba(14, 165, 233, 0.24);
+  --accent-text: #38bdf8;
 
-  --danger-text: #f87171;
+  /* Secondary brand red */
+  --danger-text: #ef4444;
   --danger-soft: rgba(239, 68, 68, 0.08);
   --danger-border: rgba(239, 68, 68, 0.18);
 
-  --topbar-bg: #05050f;
-  --sidebar-bg: #05050f;
-  --topbar-border: rgba(255, 255, 255, 0.06);
+  --topbar-bg: #08111f;
+  --sidebar-bg: #08111f;
+  --topbar-border: rgba(14, 165, 233, 0.08);
 
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+  --shadow: 0 6px 30px rgba(0, 0, 0, 0.45);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-    LIGHT THEME
+    LIGHT THEME  (MYRA BRAND)
   ═══════════════════════════════════════════════════════════════ */
 [data-theme="light"] {
-  --bg-base: #eef1fb;
+  --bg-base: #f4f8fc;
   --bg-surface: #ffffff;
-  --bg-elevated: #f8faff;
-  --bg-hover: rgba(79, 70, 229, 0.06);
+  --bg-elevated: #f8fbff;
+  --bg-hover: rgba(14, 165, 233, 0.06);
 
-  --border: rgba(79, 70, 229, 0.12);
-  --border-sub: rgba(79, 70, 229, 0.06);
+  --border: rgba(14, 165, 233, 0.14);
+  --border-sub: rgba(14, 165, 233, 0.08);
 
   --text-primary: #0f172a;
   --text-sec: #475569;
   --text-muted: #94a3b8;
 
-  --accent: #4f46e5;
-  --accent-soft: rgba(79, 70, 229, 0.08);
-  --accent-border: rgba(79, 70, 229, 0.22);
-  --accent-text: #4338ca;
+  /* Brand Blue */
+  --accent: #0284c7;
+  --accent-soft: rgba(2, 132, 199, 0.08);
+  --accent-border: rgba(2, 132, 199, 0.18);
+  --accent-text: #0369a1;
 
+  /* Brand Red */
   --danger-text: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.06);
-  --danger-border: rgba(220, 38, 38, 0.18);
+  --danger-border: rgba(220, 38, 38, 0.16);
 
   --topbar-bg: #ffffff;
   --sidebar-bg: #ffffff;
-  --topbar-border: rgba(79, 70, 229, 0.1);
+  --topbar-border: rgba(2, 132, 199, 0.08);
 
-  --shadow: 0 2px 16px rgba(79, 70, 229, 0.08);
+  --shadow: 0 4px 20px rgba(2, 132, 199, 0.08);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -155,6 +159,11 @@ body {
     border-color 0.3s;
 }
 
+.t-card:hover {
+  border-color: rgba(14, 165, 233, 0.2);
+  transform: translateY(-1px);
+}
+
 /* Text helpers */
 .t-text {
   color: var(--text-primary);
@@ -199,7 +208,11 @@ body {
 
 .t-nav-link.active {
   color: var(--accent-text);
-  background-color: var(--accent-soft);
+  background: linear-gradient(
+    90deg,
+    var(--accent-soft),
+    rgba(239, 68, 68, 0.05)
+  );
   border-color: var(--accent-border);
 }
 

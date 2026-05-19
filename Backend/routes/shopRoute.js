@@ -12,7 +12,7 @@ import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/my-shop", protect, authorize("shop_admin"), getMyShop);
+router.get("/my-shop", protect, authorize("shop_admin", "staff"), getMyShop);
 
 router
   .route("/")

@@ -9,6 +9,8 @@ import ProductList from "./pages/ProductList";
 import EditProduct from "./pages/EditProduct";
 import ShopList from "./pages/ShopList";
 import ShopDashboard from "./pages/ShopDashboard";
+import StaffList from "./pages/StaffList";
+import StaffDashboard from "./pages/StaffDashboard";
 
 const ComingSoon = ({ name }) => (
   <div className="flex items-center justify-center min-h-[60vh] t-base">
@@ -49,7 +51,7 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={["super_admin", "shop_admin"]}>
+          <ProtectedRoute allowedRoles={["super_admin", "shop_admin", "staff"]}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -100,6 +102,24 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={["shop_admin"]}>
               <ShopDashboard />
+            </ProtectedRoute>
+          }
+        />
+          <Route
+          path="staff"
+          element={
+            <ProtectedRoute allowedRoles={["shop_admin"]}>
+              <StaffList />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* staff routes */}
+        <Route
+          path="staff-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["staff"]}>
+              <StaffDashboard />
             </ProtectedRoute>
           }
         />
