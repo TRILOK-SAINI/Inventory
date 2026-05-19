@@ -194,7 +194,7 @@ export default function Login() {
               Demo Credentials
             </p>
             <p className="text-xs font-mono leading-relaxed t-text-sec">
-              Email: admin@gmail.com <br />
+              Email: superadmin@gmail.com <br />
               Password: admin
             </p>
           </div>
