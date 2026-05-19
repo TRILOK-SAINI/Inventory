@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
       {},
       {
         withCredentials: true,
-      }
+      },
     );
 
     setUser(null);

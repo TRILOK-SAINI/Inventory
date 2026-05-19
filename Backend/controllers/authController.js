@@ -7,9 +7,7 @@ import generateToken from "../utils/generateToken.js";
 ========================================================= */
 export const setupSuperAdmin = async (req, res) => {
   try {
-    const { name ="Super Admin", email ="superadmin@gmail.com", password="admin" } = req.body;
-    
-        console.log(name,email,password)
+    const { name = "Super Admin", email = "superadmin@gmail.com", password = "admin" } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,

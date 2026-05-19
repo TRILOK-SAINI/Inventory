@@ -12,6 +12,7 @@ import {
   FaSignOutAlt,
   FaTimes,
   FaCalendarAlt,
+  FaStore,
 } from "react-icons/fa";
 
 const NAV_SECTIONS = [
@@ -36,6 +37,7 @@ const NAV_SECTIONS = [
 ];
 import { useState } from "react";
 import { FaChevronDown, FaChevronRight } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 
 const NavItem = ({ link, closeSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,7 +52,9 @@ const NavItem = ({ link, closeSidebar }) => {
           className="t-nav-link w-full flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
-            <span className="text-xs text-[var(--text-muted)]">{link.icon}</span>
+            <span className="text-xs text-(--text-muted)">
+              {link.icon}
+            </span>
             {link.name}
           </div>
           {isOpen ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
@@ -105,12 +109,43 @@ const NavItem = ({ link, closeSidebar }) => {
 };
 export default function Sidebar({ closeSidebar }) {
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
-    navigate("/admin/login");
+  const navSections =
+    user?.role === "shop_admin"
+      ? [
+          {
+            label: "Shop",
+            links: [
+              {
+                name: "My Shop",
+                path: "/admin/shop-dashboard",
+                icon: <FaStore />,
+              },
+            ],
+          },
+        ]
+      : NAV_SECTIONS.map((section) => ({
+          ...section,
+          links: [
+            ...section.links,
+            {
+              name: "Shop",
+              path: "/admin/shops",
+              icon: <FaStore />,
+            },
+          ],
+        }));
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/admin/login");
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -132,7 +167,7 @@ export default function Sidebar({ closeSidebar }) {
               </span>
             ) : (
               // Light Mode: Show IMAGE only
-               <span
+              <span
                 className="font-black text-base tracking-tight"
                 style={{ color: "var(--text-primary)" }}
               >
@@ -149,26 +184,26 @@ export default function Sidebar({ closeSidebar }) {
 
       {/* ── Nav ─────────────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-      {NAV_SECTIONS.map((section) => (
-    <div key={section.label}>
-      <p
-        className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2"
-        style={{ color: "var(--text-muted)" }}
-      >
-        {section.label}
-      </p>
+        {navSections.map((section) => (
+          <div key={section.label}>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {section.label}
+            </p>
 
-      <div className="space-y-0.5">
-        {section.links.map((link) => (
-          <NavItem 
-            key={link.name} 
-            link={link} 
-            closeSidebar={closeSidebar} 
-          />
+            <div className="space-y-0.5">
+              {section.links.map((link) => (
+                <NavItem
+                  key={link.name}
+                  link={link}
+                  closeSidebar={closeSidebar}
+                />
+              ))}
+            </div>
+          </div>
         ))}
-      </div>
-    </div>
-  ))}
       </nav>
 
       {/* ── Logout ──────────────────────────────────────── */}

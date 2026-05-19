@@ -13,6 +13,8 @@ const PAGE_NAMES = {
   gallery: "Gallery",
   blog: "Blogs",
   setting: "Settings",
+  shops: "Shops",
+  "shop-dashboard": "My Shop",
 };
 
 export default function Topbar({ toggleSidebar }) {

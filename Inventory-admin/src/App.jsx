@@ -7,6 +7,8 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import AddProduct from "./pages/AddProduct";
 import ProductList from "./pages/ProductList";
 import EditProduct from "./pages/EditProduct";
+import ShopList from "./pages/ShopList";
+import ShopDashboard from "./pages/ShopDashboard";
 
 const ComingSoon = ({ name }) => (
   <div className="flex items-center justify-center min-h-[60vh] t-base">
@@ -47,16 +49,60 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={["super_admin"]}>
+          <ProtectedRoute allowedRoles={["super_admin", "shop_admin"]}>
             <AdminLayout />
           </ProtectedRoute>
         }
       >
         {/* <Route index element={<Navigate to="/admin/dashboard" replace />} /> */}
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="addproduct" element={<AddProduct />} />
-        <Route path="products" element={<ProductList />} />
-        <Route path="editproduct/:id"  element={<EditProduct />} /> 
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="addproduct"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <AddProduct />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="products"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <ProductList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="editproduct/:id"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <EditProduct />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="shops"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <ShopList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="shop-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["shop_admin"]}>
+              <ShopDashboard />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Catch-all */}

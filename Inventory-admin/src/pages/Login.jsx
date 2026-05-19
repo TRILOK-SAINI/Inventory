@@ -4,8 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
-
-
 export default function Login() {
   const navigate = useNavigate();
   const { login, user } = useAuth();
@@ -14,37 +12,42 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-useEffect(() => {
-  if (user?.role === "super_admin") {
-    navigate("/admin/dashboard", { replace: true });
-  }
-}, [user, navigate]);
+  useEffect(() => {
+    if (user?.role === "super_admin") {
+      navigate("/admin/dashboard", { replace: true });
+    } else if (user?.role === "shop_admin") {
+      navigate("/admin/shop-dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    console.log("hello from sending request");
 
-  try {
-    const loggedInUser = await login(formData);
+    try {
+      const loggedInUser = await login(formData);
 
-    if (loggedInUser.role === "super_admin") {
-      toast.success("Login successful");
-      navigate("/admin/dashboard");
-    } else {
-      setError("Unauthorized role");
+      if (loggedInUser.role === "super_admin") {
+        toast.success("Login successful");
+        navigate("/admin/dashboard");
+      } else if (loggedInUser.role === "shop_admin") {
+        toast.success("Login successful");
+        navigate("/admin/shop-dashboard");
+      } else {
+        setError("Unauthorized role");
+      }
+    } catch (error) {
+      console.log(error);
+      setError(error.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    setError(
-      error.response?.data?.message || "Login failed"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen grid md:grid-cols-2 t-base">
