@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   Check,
-  CheckSquare,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -19,15 +18,16 @@ import {
   RefreshCw,
   Save,
   Search,
-  Square,
   Store,
   Trash2,
   User,
+  Users,
   X,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import api, { getApiError } from "../lib/api";
 
+/* ── form default ──────────────────────────────────────────── */
 const initialForm = {
   name: "",
   ownerName: "",
@@ -39,9 +39,9 @@ const initialForm = {
   pincode: "",
   gstNumber: "",
   status: "active",
-  products: [],
 };
 
+/* ── tiny reusables ────────────────────────────────────────── */
 const Label = ({ children, required }) => (
   <label
     className="block text-xs font-semibold tracking-widest uppercase mb-2"
@@ -98,7 +98,7 @@ const Textarea = ({ error, ...props }) => (
         background: "var(--bg-elevated)",
         border: `1px solid ${error ? "var(--danger-border)" : "var(--border)"}`,
         color: "var(--text-primary)",
-        minHeight: "96px",
+        minHeight: "120px",
       }}
       onFocus={(e) => {
         e.target.style.borderColor = "var(--accent-border)";
@@ -141,37 +141,6 @@ const Select = ({ children, ...props }) => (
   </div>
 );
 
-const Card = ({ title, icon: Icon, children, className = "" }) => (
-  <div
-    className={`rounded-2xl p-6 ${className}`}
-    style={{
-      background: "var(--bg-surface)",
-      border: "1px solid var(--border)",
-    }}
-  >
-    <div
-      className="flex items-center gap-2.5 mb-5 pb-4"
-      style={{ borderBottom: "1px solid var(--border-sub)" }}
-    >
-      {Icon && (
-        <div
-          className="p-1.5 rounded-lg"
-          style={{ background: "var(--accent-soft)" }}
-        >
-          <Icon size={15} style={{ color: "var(--accent-text)" }} />
-        </div>
-      )}
-      <h3
-        className="font-semibold text-sm"
-        style={{ color: "var(--text-primary)" }}
-      >
-        {title}
-      </h3>
-    </div>
-    {children}
-  </div>
-);
-
 const StatusBadge = ({ status }) => {
   const active = status === "active";
   return (
@@ -192,11 +161,10 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+/* ── Credential modal ──────────────────────────────────────── */
 const CredentialModal = ({ credentials, shopName, onClose }) => {
   if (!credentials) return null;
-
   const copy = (text) => navigator.clipboard?.writeText(text);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -223,12 +191,12 @@ const CredentialModal = ({ credentials, shopName, onClose }) => {
           className="text-xl font-bold mb-1"
           style={{ color: "var(--text-primary)" }}
         >
-          Shop added successfully
+          Shop created!
         </h2>
         <p className="text-sm mb-5" style={{ color: "var(--text-sec)" }}>
-          {shopName} can now log in with these credentials.
+          <strong style={{ color: "var(--text-primary)" }}>{shopName}</strong>{" "}
+          admin can log in with:
         </p>
-
         <div className="space-y-3">
           {[
             ["Username", credentials.username],
@@ -263,14 +231,12 @@ const CredentialModal = ({ credentials, shopName, onClose }) => {
                   background: "var(--accent-soft)",
                   color: "var(--accent-text)",
                 }}
-                title={`Copy ${label}`}
               >
                 <Copy size={14} />
               </button>
             </div>
           ))}
         </div>
-
         <button
           onClick={onClose}
           className="w-full mt-6 py-2.5 rounded-xl text-sm font-semibold"
@@ -283,6 +249,7 @@ const CredentialModal = ({ credentials, shopName, onClose }) => {
   );
 };
 
+/* ── Confirm delete ────────────────────────────────────────── */
 const ConfirmDialog = ({ target, loading, onCancel, onConfirm }) => {
   if (!target) return null;
   return (
@@ -313,7 +280,11 @@ const ConfirmDialog = ({ target, loading, onCancel, onConfirm }) => {
           </h3>
         </div>
         <p className="text-sm mb-6" style={{ color: "var(--text-sec)" }}>
-          Delete "{target.name}" and its shop admin login?
+          Delete "
+          <strong style={{ color: "var(--text-primary)" }}>
+            {target.name}
+          </strong>
+          " and its admin login?
         </p>
         <div className="flex gap-3">
           <button
@@ -346,48 +317,18 @@ const ConfirmDialog = ({ target, loading, onCancel, onConfirm }) => {
   );
 };
 
+/* ── Shop form modal ───────────────────────────────────────── */
 function ShopForm({
   open,
   mode,
   form,
   errors,
-  products,
   saving,
   onClose,
   onSubmit,
   setField,
-  setProducts,
 }) {
   if (!open) return null;
-
-  const selectedIds = new Set(form.products.map((item) => item.product));
-
-  const toggleProduct = (product) => {
-    if (selectedIds.has(product._id)) {
-      setProducts(form.products.filter((item) => item.product !== product._id));
-      return;
-    }
-    setProducts([
-      ...form.products,
-      {
-        product: product._id,
-        allocatedQuantity: 1,
-        sellingPrice: product.price ?? "",
-        notes: "",
-      },
-    ]);
-  };
-
-  const updateShopProduct = (id, key, value) => {
-    setProducts(
-      form.products.map((item) =>
-        item.product === id ? { ...item, [key]: value } : item,
-      ),
-    );
-  };
-
-  const productDetails = (id) => products.find((product) => product._id === id);
-
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto p-4 lg:p-8">
       <div
@@ -395,12 +336,14 @@ function ShopForm({
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-6xl rounded-2xl shadow-2xl"
+        className="relative w-full max-w-2xl rounded-2xl shadow-2xl"
         style={{
           background: "var(--bg-base)",
           border: "1px solid var(--border)",
+          maxHeight: "92vh",
         }}
       >
+        {/* Header */}
         <div
           className="sticky top-0 z-10 flex items-center gap-4 px-5 py-4"
           style={{
@@ -429,7 +372,7 @@ function ShopForm({
               className="text-xs mt-0.5"
               style={{ color: "var(--text-muted)" }}
             >
-              Shop admin username will be the email address.
+              Shop admin logs in with the email · default password: 123456
             </p>
           </div>
           <button
@@ -461,10 +404,15 @@ function ShopForm({
           </button>
         </div>
 
-        <div className="p-5 lg:p-6">
+        <div
+          className="p-6 lg:p-8 overflow-y-auto"
+          style={{
+            maxHeight: "calc(92vh - 95px)",
+          }}
+        >
           {errors.submit && (
             <div
-              className="mb-6 px-4 py-3 rounded-xl text-sm"
+              className="mb-5 px-4 py-3 rounded-xl text-sm"
               style={{
                 background: "var(--danger-soft)",
                 border: "1px solid var(--danger-border)",
@@ -475,302 +423,139 @@ function ShopForm({
             </div>
           )}
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2 flex flex-col gap-6">
-              <Card title="Shop Details" icon={Store}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label required>Shop Name</Label>
-                    <Input
-                      icon={Store}
-                      value={form.name}
-                      onChange={(e) => setField("name", e.target.value)}
-                      error={errors.name}
-                      placeholder="e.g. Downtown Outlet"
-                    />
-                  </div>
-                  <div>
-                    <Label required>Owner Name</Label>
-                    <Input
-                      icon={User}
-                      value={form.ownerName}
-                      onChange={(e) => setField("ownerName", e.target.value)}
-                      error={errors.ownerName}
-                      placeholder="Shop admin name"
-                    />
-                  </div>
-                  <div>
-                    <Label required>Email / Username</Label>
-                    <Input
-                      icon={Mail}
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setField("email", e.target.value)}
-                      error={errors.email}
-                      placeholder="shop@example.com"
-                    />
-                  </div>
-                  <div>
-                    <Label required>Phone</Label>
-                    <Input
-                      icon={Phone}
-                      value={form.phone}
-                      onChange={(e) => setField("phone", e.target.value)}
-                      error={errors.phone}
-                      placeholder="+91 98765 43210"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label required>Address</Label>
-                    <Textarea
-                      value={form.address}
-                      onChange={(e) => setField("address", e.target.value)}
-                      error={errors.address}
-                      placeholder="Full shop address"
-                    />
-                  </div>
-                  <div>
-                    <Label required>City</Label>
-                    <Input
-                      icon={MapPin}
-                      value={form.city}
-                      onChange={(e) => setField("city", e.target.value)}
-                      error={errors.city}
-                    />
-                  </div>
-                  <div>
-                    <Label>State</Label>
-                    <Input
-                      value={form.state}
-                      onChange={(e) => setField("state", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Pincode</Label>
-                    <Input
-                      value={form.pincode}
-                      onChange={(e) => setField("pincode", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>GST Number</Label>
-                    <Input
-                      value={form.gstNumber}
-                      onChange={(e) =>
-                        setField("gstNumber", e.target.value.toUpperCase())
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>Status</Label>
-                    <Select
-                      value={form.status}
-                      onChange={(e) => setField("status", e.target.value)}
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </Select>
-                  </div>
-                </div>
-              </Card>
-
-              <Card title="Assigned Products" icon={Package}>
-                <div className="space-y-3">
-                  {form.products.length === 0 ? (
-                    <div
-                      className="rounded-xl px-4 py-8 text-center"
-                      style={{
-                        background: "var(--bg-elevated)",
-                        border: "1px dashed var(--border)",
-                      }}
-                    >
-                      <Package
-                        size={24}
-                        className="mx-auto mb-2"
-                        style={{ color: "var(--text-muted)" }}
-                      />
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        No products assigned yet
-                      </p>
-                      <p
-                        className="text-xs mt-1"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        Pick products from inventory on the right.
-                      </p>
-                    </div>
-                  ) : (
-                    form.products.map((item) => {
-                      const product = productDetails(item.product);
-                      return (
-                        <div
-                          key={item.product}
-                          className="grid grid-cols-1 md:grid-cols-[1fr_110px_120px_32px] gap-3 rounded-xl p-3"
-                          style={{
-                            background: "var(--bg-elevated)",
-                            border: "1px solid var(--border)",
-                          }}
-                        >
-                          <div className="min-w-0">
-                            <p
-                              className="text-sm font-semibold truncate"
-                              style={{ color: "var(--text-primary)" }}
-                            >
-                              {product?.name || "Selected product"}
-                            </p>
-                            <p
-                              className="text-xs mt-0.5"
-                              style={{ color: "var(--text-muted)" }}
-                            >
-                              {product?.sku ||
-                                product?.category ||
-                                "Inventory item"}
-                            </p>
-                          </div>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={item.allocatedQuantity}
-                            onChange={(e) =>
-                              updateShopProduct(
-                                item.product,
-                                "allocatedQuantity",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Qty"
-                          />
-                          <Input
-                            type="number"
-                            min="0"
-                            value={item.sellingPrice}
-                            onChange={(e) =>
-                              updateShopProduct(
-                                item.product,
-                                "sellingPrice",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Price"
-                          />
-                          <button
-                            onClick={() => toggleProduct({ _id: item.product })}
-                            className="h-10 rounded-lg flex items-center justify-center"
-                            style={{
-                              background: "var(--danger-soft)",
-                              border: "1px solid var(--danger-border)",
-                              color: "var(--danger-text)",
-                            }}
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </Card>
+          {/* Shop details */}
+          <div
+            className="rounded-2xl p-5 mb-4"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <div
+              className="flex items-center gap-2 mb-5 pb-4"
+              style={{ borderBottom: "1px solid var(--border-sub)" }}
+            >
+              <div
+                className="p-1.5 rounded-lg"
+                style={{ background: "var(--accent-soft)" }}
+              >
+                <Store size={14} style={{ color: "var(--accent-text)" }} />
+              </div>
+              <h3
+                className="font-semibold text-sm"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Shop Details
+              </h3>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <Card title="Inventory Products" icon={Package}>
-                <div className="max-h-135 overflow-y-auto pr-1 space-y-2">
-                  {products.map((product) => {
-                    const selected = selectedIds.has(product._id);
-                    return (
-                      <button
-                        key={product._id}
-                        onClick={() => toggleProduct(product)}
-                        className="w-full flex items-center gap-3 rounded-xl p-3 text-left transition-all"
-                        style={{
-                          background: selected
-                            ? "var(--accent-soft)"
-                            : "var(--bg-elevated)",
-                          border: `1px solid ${selected ? "var(--accent-border)" : "var(--border)"}`,
-                        }}
-                      >
-                        {selected ? (
-                          <CheckSquare
-                            size={16}
-                            style={{ color: "var(--accent-text)" }}
-                          />
-                        ) : (
-                          <Square
-                            size={16}
-                            style={{ color: "var(--text-muted)" }}
-                          />
-                        )}
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
-                          style={{
-                            background: "var(--bg-surface)",
-                            border: "1px solid var(--border)",
-                          }}
-                        >
-                          {product.images?.[0]?.url ? (
-                            <img
-                              src={product.images[0].url}
-                              alt=""
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Package
-                              size={14}
-                              style={{ color: "var(--text-muted)" }}
-                            />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className="text-sm font-semibold truncate"
-                            style={{ color: "var(--text-primary)" }}
-                          >
-                            {product.name}
-                          </p>
-                          <p
-                            className="text-xs truncate"
-                            style={{ color: "var(--text-muted)" }}
-                          >
-                            {product.category} | Stock {product.quantity}
-                          </p>
-                        </div>
-                        <span
-                          className="text-xs font-bold"
-                          style={{ color: "var(--accent-text)" }}
-                        >
-                          Rs {product.price?.toLocaleString()}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              <Card title="Admin Login" icon={User}>
-                <div
-                  className="rounded-xl p-4"
-                  style={{
-                    background: "var(--bg-elevated)",
-                    border: "1px solid var(--border-sub)",
-                  }}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <Label required>Shop Name</Label>
+                <Input
+                  icon={Store}
+                  value={form.name}
+                  onChange={(e) => setField("name", e.target.value)}
+                  error={errors.name}
+                  placeholder="e.g. Downtown Outlet"
+                />
+              </div>
+              <div>
+                <Label required>Owner / Admin Name</Label>
+                <Input
+                  icon={User}
+                  value={form.ownerName}
+                  onChange={(e) => setField("ownerName", e.target.value)}
+                  error={errors.ownerName}
+                  placeholder="Shop admin name"
+                />
+              </div>
+              <div>
+                <Label required>Email (Login Username)</Label>
+                <Input
+                  icon={Mail}
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setField("email", e.target.value)}
+                  error={errors.email}
+                  placeholder="shop@example.com"
+                />
+              </div>
+              <div>
+                <Label required>Phone</Label>
+                <Input
+                  icon={Phone}
+                  value={form.phone}
+                  onChange={(e) => setField("phone", e.target.value)}
+                  error={errors.phone}
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label required>Address</Label>
+                <Textarea
+                  value={form.address}
+                  onChange={(e) => setField("address", e.target.value)}
+                  error={errors.address}
+                  placeholder="Full shop address"
+                />
+              </div>
+              <div>
+                <Label required>City</Label>
+                <Input
+                  icon={MapPin}
+                  value={form.city}
+                  onChange={(e) => setField("city", e.target.value)}
+                  error={errors.city}
+                />
+              </div>
+              <div>
+                <Label>State</Label>
+                <Input
+                  value={form.state}
+                  onChange={(e) => setField("state", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Pincode</Label>
+                <Input
+                  value={form.pincode}
+                  onChange={(e) => setField("pincode", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>GST Number</Label>
+                <Input
+                  value={form.gstNumber}
+                  onChange={(e) =>
+                    setField("gstNumber", e.target.value.toUpperCase())
+                  }
+                />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select
+                  value={form.status}
+                  onChange={(e) => setField("status", e.target.value)}
                 >
-                  <p
-                    className="text-xs leading-relaxed"
-                    style={{ color: "var(--text-sec)" }}
-                  >
-                    The shop admin can log in with the shop email as username.
-                    New shops use password{" "}
-                    <strong style={{ color: "var(--text-primary)" }}>
-                      123456
-                    </strong>{" "}
-                    by default.
-                  </p>
-                </div>
-              </Card>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </Select>
+              </div>
             </div>
+          </div>
+
+          {/* Info note */}
+          <div
+            className="rounded-xl px-4 py-3 text-xs"
+            style={{
+              background: "var(--accent-soft)",
+              border: "1px solid var(--accent-border)",
+              color: "var(--accent-text)",
+            }}
+          >
+            <strong>Note:</strong> Once the shop is created, the shop admin logs
+            in and manages their own products and staff from their panel.
           </div>
         </div>
       </div>
@@ -778,11 +563,152 @@ function ShopForm({
   );
 }
 
+/* ── Shop view modal ───────────────────────────────────────── */
+function ShopView({ shop, onClose, onEdit }) {
+  if (!shop) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
+        style={{
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border)",
+        }}
+      >
+        <div
+          className="sticky top-0 z-10 flex items-center justify-between px-6 py-4"
+          style={{
+            background: "var(--bg-elevated)",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <Store size={18} style={{ color: "var(--accent-text)" }} />
+            <h2 className="font-bold" style={{ color: "var(--text-primary)" }}>
+              {shop.name}
+            </h2>
+            <StatusBadge status={shop.status} />
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <X size={15} style={{ color: "var(--text-sec)" }} />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              ["Owner", shop.ownerName],
+              ["Email", shop.email],
+              ["Phone", shop.phone],
+              ["City", `${shop.city}${shop.state ? `, ${shop.state}` : ""}`],
+              ["Pincode", shop.pincode || "-"],
+              ["GST", shop.gstNumber || "-"],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="rounded-xl p-3"
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-sub)",
+                }}
+              >
+                <p
+                  className="text-xs mb-1"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {label}
+                </p>
+                <p
+                  className="text-sm font-semibold truncate"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {value || "-"}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {shop.address && (
+            <div
+              className="rounded-xl p-3"
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-sub)",
+              }}
+            >
+              <p
+                className="text-xs mb-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Address
+              </p>
+              <p className="text-sm" style={{ color: "var(--text-primary)" }}>
+                {shop.address}
+              </p>
+            </div>
+          )}
+
+          {/* Staff count if available */}
+          <div
+            className="rounded-xl p-3 flex items-center gap-3"
+            style={{
+              background: "var(--accent-soft)",
+              border: "1px solid var(--accent-border)",
+            }}
+          >
+            <Users size={15} style={{ color: "var(--accent-text)" }} />
+            <p
+              className="text-xs font-medium"
+              style={{ color: "var(--accent-text)" }}
+            >
+              Products and staff are managed by the shop admin from their panel.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-sm font-medium"
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border)",
+                color: "var(--text-sec)",
+              }}
+            >
+              Close
+            </button>
+            <button
+              onClick={() => {
+                onClose();
+                onEdit(shop);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+              style={{ background: "var(--accent)", color: "#fff" }}
+            >
+              <Pencil size={13} /> Edit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main component ────────────────────────────────────────── */
 export default function ShopList() {
   useTheme();
 
   const [shops, setShops] = useState([]);
-  const [products, setProducts] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -794,7 +720,7 @@ export default function ShopList() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("-createdAt");
-  const [form, setForm] = useState(initialForm);
+  const [form, setFormState] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [modal, setModal] = useState({ open: false, mode: "add", id: null });
   const [viewShop, setViewShop] = useState(null);
@@ -802,26 +728,14 @@ export default function ShopList() {
   const [credentials, setCredentials] = useState(null);
   const [credentialShop, setCredentialShop] = useState("");
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      const { data } = await api.get("/products", {
-        params: { limit: 100, status: "active" },
-      });
-      if (data.success) setProducts(data.data);
-    } catch (err) {
-      setErrors({ submit: getApiError(err) });
-    }
-  }, []);
-
   const fetchShops = useCallback(
     async (page = 1) => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ page, limit: 10, sort });
-        if (search) params.set("search", search);
-        if (status) params.set("status", status);
-
-        const { data } = await api.get(`/shops?${params}`);
+        const params = { page, limit: 10, sort };
+        if (search) params.search = search;
+        if (status) params.status = status;
+        const { data } = await api.get("/shops", { params });
         if (!data.success) throw new Error(data.message);
         setShops(data.data);
         setPagination(data.pagination);
@@ -835,38 +749,31 @@ export default function ShopList() {
   );
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
-  useEffect(() => {
     fetchShops(1);
   }, [fetchShops]);
 
   const stats = useMemo(
     () => ({
       total: pagination.total,
-      active: shops.filter((shop) => shop.status === "active").length,
-      products: shops.reduce(
-        (sum, shop) => sum + (shop.products?.length || 0),
-        0,
-      ),
+      active: shops.filter((s) => s.status === "active").length,
+      inactive: shops.filter((s) => s.status === "inactive").length,
     }),
     [pagination.total, shops],
   );
 
   const setField = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setFormState((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: "" }));
   };
 
   const openAdd = () => {
-    setForm(initialForm);
+    setFormState(initialForm);
     setErrors({});
     setModal({ open: true, mode: "add", id: null });
   };
 
   const openEdit = (shop) => {
-    setForm({
+    setFormState({
       name: shop.name || "",
       ownerName: shop.ownerName || "",
       email: shop.email || "",
@@ -877,12 +784,6 @@ export default function ShopList() {
       pincode: shop.pincode || "",
       gstNumber: shop.gstNumber || "",
       status: shop.status || "active",
-      products: (shop.products || []).map((item) => ({
-        product: item.product?._id || item.product,
-        allocatedQuantity: item.allocatedQuantity ?? 0,
-        sellingPrice: item.sellingPrice ?? "",
-        notes: item.notes || "",
-      })),
     });
     setErrors({});
     setModal({ open: true, mode: "edit", id: shop._id });
@@ -900,18 +801,16 @@ export default function ShopList() {
   };
 
   const handleSubmit = async () => {
-    const nextErrors = validate();
-    if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors);
+    const errs = validate();
+    if (Object.keys(errs).length) {
+      setErrors(errs);
       return;
     }
-
     setSaving(true);
     try {
       const url = `/shops${modal.mode === "edit" ? `/${modal.id}` : ""}`;
       const method = modal.mode === "edit" ? "put" : "post";
       const { data } = await api[method](url, form);
-
       setModal({ open: false, mode: "add", id: null });
       fetchShops(pagination.page);
       if (modal.mode === "add") {
@@ -946,15 +845,16 @@ export default function ShopList() {
       });
       if (data.success)
         setShops((prev) =>
-          prev.map((item) => (item._id === shop._id ? data.data : item)),
+          prev.map((s) => (s._id === shop._id ? data.data : s)),
         );
     } catch (err) {
-      setErrors({ submit: getApiError(err) });
+      console.error(getApiError(err));
     }
   };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Page header */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1
@@ -964,7 +864,7 @@ export default function ShopList() {
             Shops
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Create shop admins and assign inventory products
+            Manage shop branches and their admin accounts
           </p>
         </div>
         <button
@@ -976,9 +876,10 @@ export default function ShopList() {
         </button>
       </div>
 
+      {/* Global error */}
       {errors.submit && !modal.open && (
         <div
-          className="mb-6 px-4 py-3 rounded-xl text-sm"
+          className="mb-5 px-4 py-3 rounded-xl text-sm"
           style={{
             background: "var(--danger-soft)",
             border: "1px solid var(--danger-border)",
@@ -989,11 +890,12 @@ export default function ShopList() {
         </div>
       )}
 
+      {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
           ["Total Shops", stats.total, Store],
-          ["Active Shops", stats.active, Check],
-          ["Assigned Products", stats.products, Package],
+          ["Active", stats.active, Check],
+          ["Inactive", stats.inactive, AlertTriangle],
         ].map(([label, value, Icon]) => (
           <div
             key={label}
@@ -1029,8 +931,9 @@ export default function ShopList() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-6">
-        <div className="relative flex-1 min-w-55">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-5">
+        <div className="relative flex-1 min-w-52">
           <Search
             size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -1043,7 +946,7 @@ export default function ShopList() {
               border: "1px solid var(--border)",
               color: "var(--text-primary)",
             }}
-            placeholder="Search shops..."
+            placeholder="Search shops…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -1056,8 +959,8 @@ export default function ShopList() {
         <Select value={sort} onChange={(e) => setSort(e.target.value)}>
           <option value="-createdAt">Newest First</option>
           <option value="createdAt">Oldest First</option>
-          <option value="name">Name A-Z</option>
-          <option value="-name">Name Z-A</option>
+          <option value="name">Name A–Z</option>
+          <option value="-name">Name Z–A</option>
         </Select>
         <button
           onClick={() => fetchShops(pagination.page)}
@@ -1071,6 +974,7 @@ export default function ShopList() {
         </button>
       </div>
 
+      {/* Table */}
       <div
         className="rounded-2xl overflow-hidden"
         style={{
@@ -1109,16 +1013,16 @@ export default function ShopList() {
                     "Shop",
                     "Admin",
                     "Location",
-                    "Products",
+                    "Code",
                     "Status",
                     "Actions",
-                  ].map((heading) => (
+                  ].map((h) => (
                     <th
-                      key={heading}
-                      className={`px-4 py-3 font-semibold text-xs tracking-widest uppercase ${heading === "Actions" ? "text-right" : "text-left"}`}
+                      key={h}
+                      className={`px-4 py-3 font-semibold text-xs tracking-widest uppercase ${h === "Actions" ? "text-right" : "text-left"}`}
                       style={{ color: "var(--text-muted)" }}
                     >
-                      {heading}
+                      {h}
                     </th>
                   ))}
                 </tr>
@@ -1148,20 +1052,12 @@ export default function ShopList() {
                             style={{ color: "var(--accent-text)" }}
                           />
                         </div>
-                        <div>
-                          <p
-                            className="font-semibold"
-                            style={{ color: "var(--text-primary)" }}
-                          >
-                            {shop.name}
-                          </p>
-                          <p
-                            className="text-xs font-mono"
-                            style={{ color: "var(--text-muted)" }}
-                          >
-                            {shop.code}
-                          </p>
-                        </div>
+                        <p
+                          className="font-semibold"
+                          style={{ color: "var(--text-primary)" }}
+                        >
+                          {shop.name}
+                        </p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -1187,13 +1083,13 @@ export default function ShopList() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className="text-xs px-2 py-1 rounded-lg"
+                        className="font-mono text-xs px-2 py-1 rounded-lg"
                         style={{
                           background: "var(--bg-elevated)",
-                          color: "var(--text-sec)",
+                          color: "var(--text-muted)",
                         }}
                       >
-                        {shop.products?.length || 0} products
+                        {shop.code}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -1242,7 +1138,7 @@ export default function ShopList() {
             style={{ borderTop: "1px solid var(--border)" }}
           >
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Showing {(pagination.page - 1) * 10 + 1}-
+              Showing {(pagination.page - 1) * 10 + 1}–
               {Math.min(pagination.page * 10, pagination.total)} of{" "}
               {pagination.total}
             </p>
@@ -1265,19 +1161,17 @@ export default function ShopList() {
         )}
       </div>
 
+      {/* Modals */}
       <ShopForm
         open={modal.open}
         mode={modal.mode}
         form={form}
         errors={errors}
-        products={products}
         saving={saving}
         onClose={() => setModal({ open: false, mode: "add", id: null })}
         onSubmit={handleSubmit}
         setField={setField}
-        setProducts={(next) => setForm((prev) => ({ ...prev, products: next }))}
       />
-
       <ShopView
         shop={viewShop}
         onClose={() => setViewShop(null)}
@@ -1294,143 +1188,6 @@ export default function ShopList() {
         shopName={credentialShop}
         onClose={() => setCredentials(null)}
       />
-    </div>
-  );
-}
-
-function ShopView({ shop, onClose, onEdit }) {
-  if (!shop) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
-        style={{
-          background: "var(--bg-elevated)",
-          border: "1px solid var(--border)",
-        }}
-      >
-        <div
-          className="sticky top-0 z-10 flex items-center justify-between px-6 py-4"
-          style={{
-            background: "var(--bg-elevated)",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <Store size={18} style={{ color: "var(--accent-text)" }} />
-            <h2 className="font-bold" style={{ color: "var(--text-primary)" }}>
-              {shop.name}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl"
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <X size={15} style={{ color: "var(--text-sec)" }} />
-          </button>
-        </div>
-        <div className="p-6 space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              ["Admin", shop.ownerName],
-              ["Email", shop.email],
-              ["Phone", shop.phone],
-              [
-                "Location",
-                `${shop.city}${shop.state ? `, ${shop.state}` : ""}`,
-              ],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className="rounded-xl p-3"
-                style={{
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border-sub)",
-                }}
-              >
-                <p
-                  className="text-xs mb-1"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {label}
-                </p>
-                <p
-                  className="text-sm font-semibold"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {value || "-"}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div
-            className="rounded-xl p-4"
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-sub)",
-            }}
-          >
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-2"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Assigned Products
-            </p>
-            <div className="space-y-2">
-              {(shop.products || []).map((item) => (
-                <div
-                  key={item.product?._id || item.product}
-                  className="flex items-center justify-between gap-3 text-sm"
-                >
-                  <span style={{ color: "var(--text-primary)" }}>
-                    {item.product?.name || "Product"}
-                  </span>
-                  <span style={{ color: "var(--text-muted)" }}>
-                    Qty {item.allocatedQuantity} | Rs{" "}
-                    {item.sellingPrice || item.product?.price || 0}
-                  </span>
-                </div>
-              ))}
-              {(!shop.products || shop.products.length === 0) && (
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  No products assigned.
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm font-medium"
-              style={{
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border)",
-                color: "var(--text-sec)",
-              }}
-            >
-              Close
-            </button>
-            <button
-              onClick={() => {
-                onClose();
-                onEdit(shop);
-              }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: "var(--accent)", color: "#fff" }}
-            >
-              <Pencil size={13} /> Edit Shop
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

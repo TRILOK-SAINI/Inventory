@@ -1,4 +1,5 @@
 import Order from "../model/order.js";
+import Product from "../model/product.js";
 import Shop from "../model/shop.js";
 
 // Staff: place a new order
@@ -11,15 +12,51 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: "Order must have at least one item" });
     }
 
-    // Load shop to verify stock
+    // Load shop to verify fallback assigned inventory
     const shop = await Shop.findById(shopId).populate("products.product");
     if (!shop) return res.status(404).json({ success: false, message: "Shop not found" });
 
-    // Validate each item against shop inventory
+    // Validate each item against the shop's own products first.
+    // Older shop allocations are still supported as a fallback.
     const enrichedItems = [];
+    const stockUpdates = [];
     for (const item of items) {
+      const quantity = Number(item.quantity);
+      if (!quantity || quantity < 1) {
+        return res.status(400).json({
+          success: false,
+          message: "Each order item must have a valid quantity",
+        });
+      }
+
+      const product = await Product.findOne({
+        _id: item.product,
+        shopId,
+        status: "active",
+      });
+
+      if (product) {
+        if (product.quantity < quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for "${product.name}". Available: ${product.quantity}`,
+          });
+        }
+
+        enrichedItems.push({
+          product: product._id,
+          name: product.name,
+          sku: product.sku || "",
+          quantity,
+          unitPrice: product.price,
+          total: quantity * product.price,
+        });
+        stockUpdates.push({ source: "product", product: product._id, quantity });
+        continue;
+      }
+
       const shopProduct = shop.products.find(
-        (sp) => sp.product._id.toString() === item.product
+        (sp) => sp.product?._id?.toString() === item.product
       );
       if (!shopProduct) {
         return res.status(400).json({
@@ -27,20 +64,21 @@ export const createOrder = async (req, res) => {
           message: `Product not found in your shop inventory`,
         });
       }
-      if (shopProduct.allocatedQuantity < item.quantity) {
+      if (shopProduct.allocatedQuantity < quantity) {
         return res.status(400).json({
           success: false,
           message: `Insufficient stock for "${shopProduct.product.name}". Available: ${shopProduct.allocatedQuantity}`,
         });
       }
       enrichedItems.push({
-        product: item.product,
+        product: shopProduct.product._id,
         name: shopProduct.product.name,
         sku: shopProduct.product.sku || "",
-        quantity: item.quantity,
+        quantity,
         unitPrice: shopProduct.sellingPrice || shopProduct.product.price,
-        total: item.quantity * (shopProduct.sellingPrice || shopProduct.product.price),
+        total: quantity * (shopProduct.sellingPrice || shopProduct.product.price),
       });
+      stockUpdates.push({ source: "shop", product: shopProduct.product._id, quantity });
     }
 
     const subtotal = enrichedItems.reduce((s, i) => s + i.total, 0);
@@ -59,12 +97,19 @@ export const createOrder = async (req, res) => {
       status: "pending",
     });
 
-    // Deduct stock from shop immediately on order creation
-    for (const item of enrichedItems) {
-      await Shop.updateOne(
-        { _id: shopId, "products.product": item.product },
-        { $inc: { "products.$.allocatedQuantity": -item.quantity } }
-      );
+    // Deduct stock immediately on order creation.
+    for (const item of stockUpdates) {
+      if (item.source === "product") {
+        await Product.updateOne(
+          { _id: item.product, shopId },
+          { $inc: { quantity: -item.quantity } }
+        );
+      } else {
+        await Shop.updateOne(
+          { _id: shopId, "products.product": item.product },
+          { $inc: { "products.$.allocatedQuantity": -item.quantity } }
+        );
+      }
     }
 
     const populated = await Order.findById(order._id).populate("takenBy", "name email");
@@ -133,12 +178,19 @@ export const cancelOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: `Order is already ${order.status}` });
     }
 
-    // Restore stock
+    // Restore stock to the same source used by the current shop flow.
     for (const item of order.items) {
-      await Shop.updateOne(
-        { _id: shopId, "products.product": item.product },
-        { $inc: { "products.$.allocatedQuantity": item.quantity } }
+      const result = await Product.updateOne(
+        { _id: item.product, shopId },
+        { $inc: { quantity: item.quantity } }
       );
+
+      if (result.matchedCount === 0) {
+        await Shop.updateOne(
+          { _id: shopId, "products.product": item.product },
+          { $inc: { "products.$.allocatedQuantity": item.quantity } }
+        );
+      }
     }
 
     order.status = "cancelled";

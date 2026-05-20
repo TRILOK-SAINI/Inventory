@@ -122,7 +122,7 @@ const handleLogout = async () => {
         </button> */}
 
         <div className="hidden sm:flex items-center gap-3 pl-3 ml-1 border-l border-gray-200 dark:border-gray-700">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black bg-(--accent-soft) text-(--accent-text) border border-(--accent-border)">
+          <div className="w-20 h-10 text-center rounded-xl flex items-center justify-center text-xs font-black bg-(--accent-soft) text-(--accent-text) border border-(--accent-border)">
           {user?.name}
           </div>
           <button

@@ -2,6 +2,13 @@ import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
   {
+    // ── Owner ──────────────────────────────────────────────────
+    shopId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shop",
+      default: null, // null = super_admin global product
+    },
+
     name: {
       type: String,
       required: [true, "Product name is required"],
@@ -79,7 +86,7 @@ const productSchema = new mongoose.Schema(
     images: [
       {
         url: { type: String, required: true },
-        public_id: { type: String },          // cloudinary / s3 key
+        public_id: { type: String },
         isPrimary: { type: Boolean, default: false },
       },
     ],
@@ -103,26 +110,28 @@ const productSchema = new mongoose.Schema(
 
     dimensions: {
       length: { type: Number, default: null },
-      width:  { type: Number, default: null },
+      width: { type: Number, default: null },
       height: { type: Number, default: null },
     },
 
     ratings: {
       average: { type: Number, default: 0, min: 0, max: 5 },
-      count:   { type: Number, default: 0 },
+      count: { type: Number, default: 0 },
     },
   },
   {
-    timestamps: true,                         // createdAt, updatedAt
-    toJSON:   { virtuals: true },
+    timestamps: true,
+    toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
-/* ── Virtuals ───────────────────────────────────────────────── */
+/* ── Virtuals ─────────────────────────────────────────────── */
 productSchema.virtual("discountPercent").get(function () {
   if (this.comparePrice && this.comparePrice > this.price) {
-    return Math.round(((this.comparePrice - this.price) / this.comparePrice) * 100);
+    return Math.round(
+      ((this.comparePrice - this.price) / this.comparePrice) * 100,
+    );
   }
   return 0;
 });
@@ -131,7 +140,7 @@ productSchema.virtual("inStock").get(function () {
   return this.quantity > 0;
 });
 
-/* ── Pre-save: auto-generate slug ───────────────────────────── */
+/* ── Pre-save: auto slug ──────────────────────────────────── */
 productSchema.pre("save", async function () {
   if (!this.isModified("name") && this.slug) return;
 
@@ -145,20 +154,21 @@ productSchema.pre("save", async function () {
   let slug = base;
   let count = 1;
 
-  while (await mongoose.models.Product.findOne({
-    slug,
-    _id: { $ne: this._id }
-  })) {
+  while (
+    await mongoose.models.Product.findOne({ slug, _id: { $ne: this._id } })
+  ) {
     slug = `${base}-${count++}`;
   }
 
   this.slug = slug;
 });
-/* ── Indexes ────────────────────────────────────────────────── */
+
+/* ── Indexes ──────────────────────────────────────────────── */
 productSchema.index({ name: "text", description: "text", tags: "text" });
 productSchema.index({ status: 1, createdAt: -1 });
 productSchema.index({ category: 1 });
 productSchema.index({ price: 1 });
+productSchema.index({ shopId: 1 });
 
 const Product = mongoose.model("Product", productSchema);
 export default Product;

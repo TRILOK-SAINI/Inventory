@@ -11,43 +11,16 @@ import ShopList from "./pages/ShopList";
 import ShopDashboard from "./pages/ShopDashboard";
 import StaffList from "./pages/StaffList";
 import StaffDashboard from "./pages/StaffDashboard";
-
-const ComingSoon = ({ name }) => (
-  <div className="flex items-center justify-center min-h-[60vh] t-base">
-    <div className="text-center">
-      {/* Uses your t-accent-bg and t-accent-text classes */}
-      <div className="w-14 h-14 border rounded-2xl flex items-center justify-center mx-auto mb-4 t-accent-bg">
-        <svg
-          className="w-6 h-6 t-accent-text"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          viewBox="0 0 24 24"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 8v4m0 4h.01" />
-        </svg>
-      </div>
-
-      {/* Uses your t-text and t-text-sec classes */}
-      <h2 className="font-black text-xl mb-2 t-text">{name}</h2>
-      <p className="text-sm font-medium t-text-sec">
-        This page is under construction.
-      </p>
-    </div>
-  </div>
-);
+import StaffOrders from "./pages/StaffOrders";
+import InventoryEntry from "./pages/InventoryEntry";
 
 export default function App() {
   return (
     <Routes>
-      {/* Default redirect */}
       <Route path="/" element={<Navigate to="/admin/login" replace />} />
-
-      {/* Login */}
       <Route path="/admin/login" element={<Login />} />
 
-      {/* Protected admin routes */}
+      {/* Protected shell — all roles */}
       <Route
         path="/admin"
         element={
@@ -56,36 +29,12 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        {/* <Route index element={<Navigate to="/admin/dashboard" replace />} /> */}
+        {/* ── super_admin ─────────────────────────────────── */}
         <Route
           path="dashboard"
           element={
             <ProtectedRoute allowedRoles={["super_admin"]}>
               <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="addproduct"
-          element={
-            <ProtectedRoute allowedRoles={["super_admin"]}>
-              <AddProduct />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="products"
-          element={
-            <ProtectedRoute allowedRoles={["super_admin"]}>
-              <ProductList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="editproduct/:id"
-          element={
-            <ProtectedRoute allowedRoles={["super_admin"]}>
-              <EditProduct />
             </ProtectedRoute>
           }
         />
@@ -97,6 +46,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* ── shop_admin ──────────────────────────────────── */}
         <Route
           path="shop-dashboard"
           element={
@@ -105,7 +56,31 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-          <Route
+        <Route
+          path="addproduct"
+          element={
+            <ProtectedRoute allowedRoles={["shop_admin"]}>
+              <AddProduct />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="products"
+          element={
+            <ProtectedRoute allowedRoles={["shop_admin"]}>
+              <ProductList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="editproduct/:id"
+          element={
+            <ProtectedRoute allowedRoles={["shop_admin"]}>
+              <EditProduct />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="staff"
           element={
             <ProtectedRoute allowedRoles={["shop_admin"]}>
@@ -114,7 +89,7 @@ export default function App() {
           }
         />
 
-        {/* staff routes */}
+        {/* ── staff ───────────────────────────────────────── */}
         <Route
           path="staff-dashboard"
           element={
@@ -123,9 +98,24 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="orders"
+          element={
+            <ProtectedRoute allowedRoles={["staff"]}>
+              <StaffOrders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="inventory-entry"
+          element={
+            <ProtectedRoute allowedRoles={["staff"]}>
+              <InventoryEntry />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
-      {/* Catch-all */}
       <Route path="*" element={<Navigate to="/admin/login" replace />} />
     </Routes>
   );

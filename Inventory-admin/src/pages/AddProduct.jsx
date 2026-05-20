@@ -1,37 +1,69 @@
 import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Upload, X, Plus, ImageIcon, Package, Tag, DollarSign,
-  Hash, Layers, Weight, Ruler, Star, ChevronDown, ArrowLeft, Save, Loader2
+  Upload,
+  X,
+  Plus,
+  ImageIcon,
+  Package,
+  Tag,
+  DollarSign,
+  Hash,
+  Layers,
+  Weight,
+  Ruler,
+  Star,
+  ChevronDown,
+  ArrowLeft,
+  Save,
+  Loader2,
 } from "lucide-react";
 
 /* ── tiny reusable pieces ──────────────────────────────────── */
 const Label = ({ children, required }) => (
-  <label className="block text-xs font-semibold tracking-widest uppercase mb-2"
-    style={{ color: "var(--text-sec)" }}>
-    {children} {required && <span style={{ color: "var(--danger-text)" }}>*</span>}
+  <label
+    className="block text-xs font-semibold tracking-widest uppercase mb-2"
+    style={{ color: "var(--text-sec)" }}
+  >
+    {children}{" "}
+    {required && <span style={{ color: "var(--danger-text)" }}>*</span>}
   </label>
 );
 
 const Input = ({ icon: Icon, error, className = "", ...props }) => (
   <div className="relative">
     {Icon && (
-      <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-        style={{ color: "var(--text-muted)" }} />
+      <Icon
+        size={14}
+        className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+        style={{ color: "var(--text-muted)" }}
+      />
     )}
     <input
       className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all
         ${Icon ? "pl-9" : ""} ${className}`}
       style={{
-        background:  "var(--bg-elevated)",
-        border:      `1px solid ${error ? "var(--danger-border)" : "var(--border)"}`,
-        color:       "var(--text-primary)",
+        background: "var(--bg-elevated)",
+        border: `1px solid ${error ? "var(--danger-border)" : "var(--border)"}`,
+        color: "var(--text-primary)",
       }}
-      onFocus={e => { e.target.style.borderColor = "var(--accent-border)"; e.target.style.boxShadow = "0 0 0 3px var(--accent-soft)"; }}
-      onBlur={e =>  { e.target.style.borderColor = error ? "var(--danger-border)" : "var(--border)"; e.target.style.boxShadow = "none"; }}
+      onFocus={(e) => {
+        e.target.style.borderColor = "var(--accent-border)";
+        e.target.style.boxShadow = "0 0 0 3px var(--accent-soft)";
+      }}
+      onBlur={(e) => {
+        e.target.style.borderColor = error
+          ? "var(--danger-border)"
+          : "var(--border)";
+        e.target.style.boxShadow = "none";
+      }}
       {...props}
     />
-    {error && <p className="mt-1 text-xs" style={{ color: "var(--danger-text)" }}>{error}</p>}
+    {error && (
+      <p className="mt-1 text-xs" style={{ color: "var(--danger-text)" }}>
+        {error}
+      </p>
+    )}
   </div>
 );
 
@@ -40,57 +72,102 @@ const Textarea = ({ error, ...props }) => (
     <textarea
       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all resize-none"
       style={{
-        background:  "var(--bg-elevated)",
-        border:      `1px solid ${error ? "var(--danger-border)" : "var(--border)"}`,
-        color:       "var(--text-primary)",
-        minHeight:   "100px",
+        background: "var(--bg-elevated)",
+        border: `1px solid ${error ? "var(--danger-border)" : "var(--border)"}`,
+        color: "var(--text-primary)",
+        minHeight: "100px",
       }}
-      onFocus={e => { e.target.style.borderColor = "var(--accent-border)"; e.target.style.boxShadow = "0 0 0 3px var(--accent-soft)"; }}
-      onBlur={e =>  { e.target.style.borderColor = error ? "var(--danger-border)" : "var(--border)"; e.target.style.boxShadow = "none"; }}
+      onFocus={(e) => {
+        e.target.style.borderColor = "var(--accent-border)";
+        e.target.style.boxShadow = "0 0 0 3px var(--accent-soft)";
+      }}
+      onBlur={(e) => {
+        e.target.style.borderColor = error
+          ? "var(--danger-border)"
+          : "var(--border)";
+        e.target.style.boxShadow = "none";
+      }}
       {...props}
     />
-    {error && <p className="mt-1 text-xs" style={{ color: "var(--danger-text)" }}>{error}</p>}
+    {error && (
+      <p className="mt-1 text-xs" style={{ color: "var(--danger-text)" }}>
+        {error}
+      </p>
+    )}
   </div>
 );
 
 const Select = ({ icon: Icon, children, error, ...props }) => (
   <div className="relative">
     {Icon && (
-      <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
-        style={{ color: "var(--text-muted)" }} />
+      <Icon
+        size={14}
+        className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
+        style={{ color: "var(--text-muted)" }}
+      />
     )}
     <select
       className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all appearance-none
         ${Icon ? "pl-9" : ""}`}
       style={{
         background: "var(--bg-elevated)",
-        border:     `1px solid ${error ? "var(--danger-border)" : "var(--border)"}`,
-        color:      "var(--text-primary)",
+        border: `1px solid ${error ? "var(--danger-border)" : "var(--border)"}`,
+        color: "var(--text-primary)",
       }}
-      onFocus={e => { e.target.style.borderColor = "var(--accent-border)"; e.target.style.boxShadow = "0 0 0 3px var(--accent-soft)"; }}
-      onBlur={e =>  { e.target.style.borderColor = error ? "var(--danger-border)" : "var(--border)"; e.target.style.boxShadow = "none"; }}
+      onFocus={(e) => {
+        e.target.style.borderColor = "var(--accent-border)";
+        e.target.style.boxShadow = "0 0 0 3px var(--accent-soft)";
+      }}
+      onBlur={(e) => {
+        e.target.style.borderColor = error
+          ? "var(--danger-border)"
+          : "var(--border)";
+        e.target.style.boxShadow = "none";
+      }}
       {...props}
     >
       {children}
     </select>
-    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-      style={{ color: "var(--text-muted)" }} />
-    {error && <p className="mt-1 text-xs" style={{ color: "var(--danger-text)" }}>{error}</p>}
+    <ChevronDown
+      size={14}
+      className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+      style={{ color: "var(--text-muted)" }}
+    />
+    {error && (
+      <p className="mt-1 text-xs" style={{ color: "var(--danger-text)" }}>
+        {error}
+      </p>
+    )}
   </div>
 );
 
 const Card = ({ title, icon: Icon, children, className = "" }) => (
-  <div className={`rounded-2xl p-6 ${className}`}
-    style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+  <div
+    className={`rounded-2xl p-6 ${className}`}
+    style={{
+      background: "var(--bg-surface)",
+      border: "1px solid var(--border)",
+    }}
+  >
     {title && (
-      <div className="flex items-center gap-2.5 mb-5 pb-4"
-        style={{ borderBottom: "1px solid var(--border-sub)" }}>
+      <div
+        className="flex items-center gap-2.5 mb-5 pb-4"
+        style={{ borderBottom: "1px solid var(--border-sub)" }}
+      >
         {Icon && (
-          <div className="p-1.5 rounded-lg" style={{ background: "var(--accent-soft)" }}>
+          <div
+            className="p-1.5 rounded-lg"
+            style={{ background: "var(--accent-soft)" }}
+          >
             <Icon size={15} style={{ color: "var(--accent-text)" }} />
           </div>
         )}
-        <h3 className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{title}</h3>
+        <h3
+          className="font-semibold text-sm"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {title}
+        </h3>
       </div>
     )}
     {children}
@@ -99,12 +176,23 @@ const Card = ({ title, icon: Icon, children, className = "" }) => (
 
 const Toggle = ({ checked, onChange, label }) => (
   <label className="flex items-center justify-between cursor-pointer group">
-    <span className="text-sm" style={{ color: "var(--text-sec)" }}>{label}</span>
+    <span className="text-sm" style={{ color: "var(--text-sec)" }}>
+      {label}
+    </span>
     <div className="relative">
-      <input type="checkbox" className="sr-only" checked={checked} onChange={onChange} />
-      <div className="w-10 h-5 rounded-full transition-all duration-200"
-        style={{ background: checked ? "var(--accent)" : "var(--border)" }}>
-        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${checked ? "left-5" : "left-0.5"}`} />
+      <input
+        type="checkbox"
+        className="sr-only"
+        checked={checked}
+        onChange={onChange}
+      />
+      <div
+        className="w-10 h-5 rounded-full transition-all duration-200"
+        style={{ background: checked ? "var(--accent)" : "var(--border)" }}
+      >
+        <div
+          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${checked ? "left-5" : "left-0.5"}`}
+        />
       </div>
     </div>
   </label>
@@ -112,89 +200,128 @@ const Toggle = ({ checked, onChange, label }) => (
 
 /* ═══════════════════════════════════════════════════════════════ */
 
-const CATEGORIES = ["Electronics","Clothing","Footwear","Home & Living","Beauty","Sports","Books","Toys","Food","Accessories","Other"];
-const UNITS      = ["piece","kg","litre","box","set","pair"];
+const CATEGORIES = [
+  "Electronics",
+  "Clothing",
+  "Footwear",
+  "Home & Living",
+  "Beauty",
+  "Sports",
+  "Books",
+  "Toys",
+  "Food",
+  "Accessories",
+  "Other",
+];
+const UNITS = ["piece", "kg", "litre", "box", "set", "pair"];
 
 const initialForm = {
-  name: "", sku: "", category: "", brand: "", shortDescription: "",
-  description: "", price: "", comparePrice: "", quantity: "1", unit: "piece",
-  tags: "", weight: "", status: "active", isFeatured: false,
+  name: "",
+  sku: "",
+  category: "",
+  brand: "",
+  shortDescription: "",
+  description: "",
+  price: "",
+  comparePrice: "",
+  quantity: "1",
+  unit: "piece",
+  tags: "",
+  weight: "",
+  status: "active",
+  isFeatured: false,
   dimensions: { length: "", width: "", height: "" },
 };
 
 export default function AddProduct() {
   const navigate = useNavigate();
-  const fileRef  = useRef(null);
-  const API = import.meta.env.VITE_API_URL;  
+  const fileRef = useRef(null);
+  const API = import.meta.env.VITE_API_URL;
 
-
-  const [form,     setForm]     = useState(initialForm);
-  const [images,   setImages]   = useState([]);     // { file, preview }[]
-  const [errors,   setErrors]   = useState({});
-  const [loading,  setLoading]  = useState(false);
+  const [form, setForm] = useState(initialForm);
+  const [images, setImages] = useState([]); // { file, preview }[]
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   /* ── field change ─────────────────────────────────────────── */
   const set = (key, val) => {
-    setForm(f => ({ ...f, [key]: val }));
-    setErrors(e => ({ ...e, [key]: "" }));
+    setForm((f) => ({ ...f, [key]: val }));
+    setErrors((e) => ({ ...e, [key]: "" }));
   };
 
   const setDim = (key, val) =>
-    setForm(f => ({ ...f, dimensions: { ...f.dimensions, [key]: val } }));
+    setForm((f) => ({ ...f, dimensions: { ...f.dimensions, [key]: val } }));
 
   /* ── image handling ───────────────────────────────────────── */
   const addFiles = useCallback((files) => {
-    const valid = Array.from(files).filter(f => f.type.startsWith("image/"));
-    const previews = valid.map(f => ({ file: f, preview: URL.createObjectURL(f) }));
-    setImages(prev => [...prev, ...previews].slice(0, 8));
+    const valid = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const previews = valid.map((f) => ({
+      file: f,
+      preview: URL.createObjectURL(f),
+    }));
+    setImages((prev) => [...prev, ...previews].slice(0, 8));
   }, []);
 
   const removeImage = (idx) => {
-    setImages(prev => {
+    setImages((prev) => {
       URL.revokeObjectURL(prev[idx].preview);
       return prev.filter((_, i) => i !== idx);
     });
   };
 
   const onDrop = (e) => {
-    e.preventDefault(); setDragging(false);
+    e.preventDefault();
+    setDragging(false);
     addFiles(e.dataTransfer.files);
   };
 
   /* ── validation ───────────────────────────────────────────── */
   const validate = () => {
     const e = {};
-    if (!form.name.trim())        e.name        = "Product name is required";
-    if (!form.category)           e.category    = "Please select a category";
+    if (!form.name.trim()) e.name = "Product name is required";
+    if (!form.category) e.category = "Please select a category";
     if (!form.description.trim()) e.description = "Description is required";
-    if (!form.price || isNaN(form.price) || Number(form.price) < 0) e.price = "Enter a valid price";
-    if (!form.quantity || isNaN(form.quantity) || Number(form.quantity) < 0) e.quantity = "Enter a valid quantity";
-    if (images.length === 0)      e.images      = "At least one product image is required";
+    if (!form.price || isNaN(form.price) || Number(form.price) < 0)
+      e.price = "Enter a valid price";
+    if (!form.quantity || isNaN(form.quantity) || Number(form.quantity) < 0)
+      e.quantity = "Enter a valid quantity";
+    if (images.length === 0)
+      e.images = "At least one product image is required";
     return e;
   };
 
   /* ── submit ───────────────────────────────────────────────── */
   const handleSubmit = async () => {
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
 
     setLoading(true);
     try {
       const fd = new FormData();
-      images.forEach(img => fd.append("images", img.file));
+      images.forEach((img) => fd.append("images", img.file));
 
       const payload = {
         ...form,
-        tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
+        tags: form.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
         dimensions: form.dimensions,
       };
       Object.entries(payload).forEach(([k, v]) =>
-        fd.append(k, typeof v === "object" ? JSON.stringify(v) : v)
+        fd.append(k, typeof v === "object" ? JSON.stringify(v) : v),
       );
 
-      const res = await fetch(`${API}/products`, { method: "POST", body: fd });
-      console.log(res)
+      const res = await fetch(`${API}/products`, {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+      });
+      console.log(res);
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message || "Failed to create product");
@@ -209,98 +336,180 @@ export default function AddProduct() {
   /* ── render ───────────────────────────────────────────────── */
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => navigate(-1)}
+        <button
+          onClick={() => navigate(-1)}
           className="p-2 rounded-xl transition-all"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-border)"}
-          onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.borderColor = "var(--accent-border)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.borderColor = "var(--border)")
+          }
+        >
           <ArrowLeft size={16} style={{ color: "var(--text-sec)" }} />
         </button>
         <div>
-          <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>Add New Product</h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Fill in the details below to list a new product</p>
+          <h1
+            className="text-xl font-bold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Add New Product
+          </h1>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            Fill in the details below to list a new product
+          </p>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <button onClick={() => navigate(-1)}
+          <button
+            onClick={() => navigate(-1)}
             className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
-            style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-sec)" }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-border)"}
-            onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+              color: "var(--text-sec)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.borderColor = "var(--accent-border)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border)")
+            }
+          >
             Cancel
           </button>
-          <button onClick={handleSubmit} disabled={loading}
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
             className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
-            style={{ background: "var(--accent)", color: "#fff" }}>
-            {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+            style={{ background: "var(--accent)", color: "#fff" }}
+          >
+            {loading ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Save size={15} />
+            )}
             {loading ? "Saving..." : "Save Product"}
           </button>
         </div>
       </div>
 
       {errors.submit && (
-        <div className="mb-6 px-4 py-3 rounded-xl text-sm"
-          style={{ background: "var(--danger-soft)", border: "1px solid var(--danger-border)", color: "var(--danger-text)" }}>
+        <div
+          className="mb-6 px-4 py-3 rounded-xl text-sm"
+          style={{
+            background: "var(--danger-soft)",
+            border: "1px solid var(--danger-border)",
+            color: "var(--danger-text)",
+          }}
+        >
           {errors.submit}
         </div>
       )}
 
       {/* Main grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
         {/* Left column — 2/3 */}
         <div className="xl:col-span-2 flex flex-col gap-6">
-
           {/* Basic info */}
           <Card title="Basic Information" icon={Package}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <Label required>Product Name</Label>
-                <Input icon={Package} placeholder="e.g. Wireless Noise-Cancelling Headphones"
-                  value={form.name} onChange={e => set("name", e.target.value)} error={errors.name} />
+                <Input
+                  icon={Package}
+                  placeholder="e.g. Wireless Noise-Cancelling Headphones"
+                  value={form.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  error={errors.name}
+                />
               </div>
               <div>
                 <Label>SKU</Label>
-                <Input icon={Hash} placeholder="e.g. WNC-001"
-                  value={form.sku} onChange={e => set("sku", e.target.value.toUpperCase())} />
+                <Input
+                  icon={Hash}
+                  placeholder="e.g. WNC-001"
+                  value={form.sku}
+                  onChange={(e) => set("sku", e.target.value.toUpperCase())}
+                />
               </div>
               <div>
                 <Label>Brand</Label>
-                <Input icon={Tag} placeholder="e.g. Sony, Apple…"
-                  value={form.brand} onChange={e => set("brand", e.target.value)} />
+                <Input
+                  icon={Tag}
+                  placeholder="e.g. Sony, Apple…"
+                  value={form.brand}
+                  onChange={(e) => set("brand", e.target.value)}
+                />
               </div>
               <div>
                 <Label required>Category</Label>
-                <Select icon={Layers} value={form.category}
-                  onChange={e => set("category", e.target.value)} error={errors.category}>
-                  <option value="" disabled>Select category</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                <Select
+                  icon={Layers}
+                  value={form.category}
+                  onChange={(e) => set("category", e.target.value)}
+                  error={errors.category}
+                >
+                  <option value="" disabled>
+                    Select category
+                  </option>
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </Select>
               </div>
               <div>
                 <Label>Unit</Label>
-                <Select value={form.unit} onChange={e => set("unit", e.target.value)}>
-                  {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                <Select
+                  value={form.unit}
+                  onChange={(e) => set("unit", e.target.value)}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
                 </Select>
               </div>
               <div className="sm:col-span-2">
                 <Label>Short Description</Label>
-                <Input placeholder="One-line summary shown in product cards"
-                  value={form.shortDescription} onChange={e => set("shortDescription", e.target.value)} />
+                <Input
+                  placeholder="One-line summary shown in product cards"
+                  value={form.shortDescription}
+                  onChange={(e) => set("shortDescription", e.target.value)}
+                />
               </div>
               <div className="sm:col-span-2">
                 <Label required>Description</Label>
-                <Textarea rows={5} placeholder="Detailed product description…"
-                  value={form.description} onChange={e => set("description", e.target.value)}
-                  error={errors.description} />
+                <Textarea
+                  rows={5}
+                  placeholder="Detailed product description…"
+                  value={form.description}
+                  onChange={(e) => set("description", e.target.value)}
+                  error={errors.description}
+                />
               </div>
               <div className="sm:col-span-2">
                 <Label>Tags</Label>
-                <Input icon={Tag} placeholder="wireless, bluetooth, audio  (comma separated)"
-                  value={form.tags} onChange={e => set("tags", e.target.value)} />
-                <p className="mt-1.5 text-xs" style={{ color: "var(--text-muted)" }}>Separate tags with commas</p>
+                <Input
+                  icon={Tag}
+                  placeholder="wireless, bluetooth, audio  (comma separated)"
+                  value={form.tags}
+                  onChange={(e) => set("tags", e.target.value)}
+                />
+                <p
+                  className="mt-1.5 text-xs"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Separate tags with commas
+                </p>
               </div>
             </div>
           </Card>
@@ -310,45 +519,93 @@ export default function AddProduct() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label required>Price (₹)</Label>
-                <Input icon={DollarSign} type="number" min="0" step="0.01" placeholder="0.00"
-                  value={form.price} onChange={e => set("price", e.target.value)} error={errors.price} />
+                <Input
+                  icon={DollarSign}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={form.price}
+                  onChange={(e) => set("price", e.target.value)}
+                  error={errors.price}
+                />
               </div>
               <div>
                 <Label>Compare Price (₹)</Label>
-                <Input type="number" min="0" step="0.01" placeholder="MRP / original"
-                  value={form.comparePrice} onChange={e => set("comparePrice", e.target.value)} />
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="MRP / original"
+                  value={form.comparePrice}
+                  onChange={(e) => set("comparePrice", e.target.value)}
+                />
               </div>
               <div>
                 <Label required>Quantity</Label>
-                <Input type="number" min="0" placeholder="0"
-                  value={form.quantity} onChange={e => set("quantity", e.target.value)} error={errors.quantity} />
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={form.quantity}
+                  onChange={(e) => set("quantity", e.target.value)}
+                  error={errors.quantity}
+                />
               </div>
               <div>
                 <Label>Weight (grams)</Label>
-                <Input icon={Weight} type="number" min="0" placeholder="500"
-                  value={form.weight} onChange={e => set("weight", e.target.value)} />
+                <Input
+                  icon={Weight}
+                  type="number"
+                  min="0"
+                  placeholder="500"
+                  value={form.weight}
+                  onChange={(e) => set("weight", e.target.value)}
+                />
               </div>
             </div>
 
-            {form.comparePrice && form.price && Number(form.comparePrice) > Number(form.price) && (
-              <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg"
-                style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-border)" }}>
-                <Star size={13} style={{ color: "var(--accent-text)" }} />
-                <span className="text-xs font-medium" style={{ color: "var(--accent-text)" }}>
-                  {Math.round(((form.comparePrice - form.price) / form.comparePrice) * 100)}% discount will be shown to customers
-                </span>
-              </div>
-            )}
+            {form.comparePrice &&
+              form.price &&
+              Number(form.comparePrice) > Number(form.price) && (
+                <div
+                  className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg"
+                  style={{
+                    background: "var(--accent-soft)",
+                    border: "1px solid var(--accent-border)",
+                  }}
+                >
+                  <Star size={13} style={{ color: "var(--accent-text)" }} />
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: "var(--accent-text)" }}
+                  >
+                    {Math.round(
+                      ((form.comparePrice - form.price) / form.comparePrice) *
+                        100,
+                    )}
+                    % discount will be shown to customers
+                  </span>
+                </div>
+              )}
           </Card>
 
           {/* Dimensions */}
           <Card title="Dimensions" icon={Ruler}>
             <div className="grid grid-cols-3 gap-4">
-              {["length","width","height"].map(dim => (
+              {["length", "width", "height"].map((dim) => (
                 <div key={dim}>
-                  <Label>{dim.charAt(0).toUpperCase() + dim.slice(1)} (cm)</Label>
-                  <Input type="number" min="0" step="0.1" placeholder="0"
-                    value={form.dimensions[dim]} onChange={e => setDim(dim, e.target.value)} />
+                  <Label>
+                    {dim.charAt(0).toUpperCase() + dim.slice(1)} (cm)
+                  </Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0"
+                    value={form.dimensions[dim]}
+                    onChange={(e) => setDim(dim, e.target.value)}
+                  />
                 </div>
               ))}
             </div>
@@ -357,64 +614,113 @@ export default function AddProduct() {
 
         {/* Right column — 1/3 */}
         <div className="flex flex-col gap-6">
-
           {/* Product Images */}
           <Card title="Product Images" icon={ImageIcon}>
             {/* Drop zone */}
             <div
               onClick={() => fileRef.current.click()}
-              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
               className="rounded-xl cursor-pointer transition-all flex flex-col items-center justify-center gap-3 py-8 px-4 text-center"
               style={{
-                border:     `2px dashed ${dragging ? "var(--accent)" : errors.images ? "var(--danger-border)" : "var(--border)"}`,
-                background: dragging ? "var(--accent-soft)" : "var(--bg-elevated)",
-              }}>
-              <div className="p-3 rounded-xl" style={{ background: "var(--accent-soft)" }}>
+                border: `2px dashed ${dragging ? "var(--accent)" : errors.images ? "var(--danger-border)" : "var(--border)"}`,
+                background: dragging
+                  ? "var(--accent-soft)"
+                  : "var(--bg-elevated)",
+              }}
+            >
+              <div
+                className="p-3 rounded-xl"
+                style={{ background: "var(--accent-soft)" }}
+              >
                 <Upload size={20} style={{ color: "var(--accent-text)" }} />
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                  Drop images here or <span style={{ color: "var(--accent-text)" }}>browse</span>
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Drop images here or{" "}
+                  <span style={{ color: "var(--accent-text)" }}>browse</span>
                 </p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--text-muted)" }}
+                >
                   JPEG, PNG, WEBP · max 5MB · up to 8 images
                 </p>
               </div>
-              <input ref={fileRef} type="file" multiple accept="image/*" className="hidden"
-                onChange={e => addFiles(e.target.files)} />
+              <input
+                ref={fileRef}
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => addFiles(e.target.files)}
+              />
             </div>
 
             {errors.images && (
-              <p className="mt-2 text-xs" style={{ color: "var(--danger-text)" }}>{errors.images}</p>
+              <p
+                className="mt-2 text-xs"
+                style={{ color: "var(--danger-text)" }}
+              >
+                {errors.images}
+              </p>
             )}
 
             {/* Previews */}
             {images.length > 0 && (
               <div className="grid grid-cols-3 gap-2 mt-4">
                 {images.map((img, i) => (
-                  <div key={i} className="relative group aspect-square rounded-xl overflow-hidden"
-                    style={{ border: "1px solid var(--border)" }}>
-                    <img src={img.preview} alt="" className="w-full h-full object-cover" />
+                  <div
+                    key={i}
+                    className="relative group aspect-square rounded-xl overflow-hidden"
+                    style={{ border: "1px solid var(--border)" }}
+                  >
+                    <img
+                      src={img.preview}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
                     {/* Primary badge */}
                     {i === 0 && (
-                      <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
-                        style={{ background: "var(--accent)", color: "#fff" }}>PRIMARY</div>
+                      <div
+                        className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
+                        style={{ background: "var(--accent)", color: "#fff" }}
+                      >
+                        PRIMARY
+                      </div>
                     )}
-                    <button onClick={() => removeImage(i)}
+                    <button
+                      onClick={() => removeImage(i)}
                       className="absolute top-1 right-1 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ background: "rgba(0,0,0,0.7)" }}>
+                      style={{ background: "rgba(0,0,0,0.7)" }}
+                    >
                       <X size={10} className="text-white" />
                     </button>
                   </div>
                 ))}
                 {images.length < 8 && (
-                  <button onClick={() => fileRef.current.click()}
+                  <button
+                    onClick={() => fileRef.current.click()}
                     className="aspect-square rounded-xl flex items-center justify-center transition-all"
-                    style={{ border: "2px dashed var(--border)", background: "var(--bg-elevated)" }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-border)"}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
+                    style={{
+                      border: "2px dashed var(--border)",
+                      background: "var(--bg-elevated)",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.borderColor =
+                        "var(--accent-border)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--border)")
+                    }
+                  >
                     <Plus size={18} style={{ color: "var(--text-muted)" }} />
                   </button>
                 )}
@@ -427,26 +733,55 @@ export default function AddProduct() {
             <div className="flex flex-col gap-5">
               <div>
                 <Label>Product Status</Label>
-                <Select value={form.status} onChange={e => set("status", e.target.value)}>
+                <Select
+                  value={form.status}
+                  onChange={(e) => set("status", e.target.value)}
+                >
                   <option value="active">Active — visible in store</option>
                   <option value="inactive">Inactive — hidden</option>
                   <option value="draft">Draft — unpublished</option>
                 </Select>
               </div>
-              <div className="pt-2" style={{ borderTop: "1px solid var(--border-sub)" }}>
-                <Toggle label="Featured Product" checked={form.isFeatured}
-                  onChange={e => set("isFeatured", e.target.checked)} />
-                <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+              <div
+                className="pt-2"
+                style={{ borderTop: "1px solid var(--border-sub)" }}
+              >
+                <Toggle
+                  label="Featured Product"
+                  checked={form.isFeatured}
+                  onChange={(e) => set("isFeatured", e.target.checked)}
+                />
+                <p
+                  className="text-xs mt-2"
+                  style={{ color: "var(--text-muted)" }}
+                >
                   Featured products appear in homepage spotlight sections.
                 </p>
               </div>
 
               {/* Status preview pill */}
-              <div className="flex items-center gap-2 p-3 rounded-xl"
-                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-sub)" }}>
-                <div className="w-2 h-2 rounded-full"
-                  style={{ background: form.status === "active" ? "#4ade80" : form.status === "inactive" ? "var(--danger-text)" : "var(--text-muted)" }} />
-                <span className="text-xs capitalize" style={{ color: "var(--text-sec)" }}>
+              <div
+                className="flex items-center gap-2 p-3 rounded-xl"
+                style={{
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border-sub)",
+                }}
+              >
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    background:
+                      form.status === "active"
+                        ? "#4ade80"
+                        : form.status === "inactive"
+                          ? "var(--danger-text)"
+                          : "var(--text-muted)",
+                  }}
+                />
+                <span
+                  className="text-xs capitalize"
+                  style={{ color: "var(--text-sec)" }}
+                >
                   Will be saved as <strong>{form.status}</strong>
                 </span>
               </div>
@@ -458,20 +793,48 @@ export default function AddProduct() {
             <Card title="Preview Summary">
               <div className="flex flex-col gap-3 text-sm">
                 {images[0] && (
-                  <img src={images[0].preview} alt="" className="w-full aspect-video object-cover rounded-xl" />
+                  <img
+                    src={images[0].preview}
+                    alt=""
+                    className="w-full aspect-video object-cover rounded-xl"
+                  />
                 )}
-                {form.name && <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{form.name}</p>}
+                {form.name && (
+                  <p
+                    className="font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {form.name}
+                  </p>
+                )}
                 {form.price && (
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg" style={{ color: "var(--accent-text)" }}>₹{Number(form.price).toLocaleString()}</span>
-                    {form.comparePrice && Number(form.comparePrice) > Number(form.price) && (
-                      <span className="text-xs line-through" style={{ color: "var(--text-muted)" }}>₹{Number(form.comparePrice).toLocaleString()}</span>
-                    )}
+                    <span
+                      className="font-bold text-lg"
+                      style={{ color: "var(--accent-text)" }}
+                    >
+                      ₹{Number(form.price).toLocaleString()}
+                    </span>
+                    {form.comparePrice &&
+                      Number(form.comparePrice) > Number(form.price) && (
+                        <span
+                          className="text-xs line-through"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          ₹{Number(form.comparePrice).toLocaleString()}
+                        </span>
+                      )}
                   </div>
                 )}
                 {form.category && (
-                  <span className="text-xs px-2 py-1 rounded-lg w-fit"
-                    style={{ background: "var(--accent-soft)", color: "var(--accent-text)", border: "1px solid var(--accent-border)" }}>
+                  <span
+                    className="text-xs px-2 py-1 rounded-lg w-fit"
+                    style={{
+                      background: "var(--accent-soft)",
+                      color: "var(--accent-text)",
+                      border: "1px solid var(--accent-border)",
+                    }}
+                  >
                     {form.category}
                   </span>
                 )}
@@ -482,21 +845,35 @@ export default function AddProduct() {
       </div>
 
       {/* Footer actions (mobile-friendly) */}
-      <div className="mt-8 flex items-center justify-end gap-3 pt-6 hidden"
-        style={{ borderTop: "1px solid var(--border)" }}>
-        <button onClick={() => navigate(-1)}
+      <div
+        className="mt-8 flex items-center justify-end gap-3 pt-6 hidden"
+        style={{ borderTop: "1px solid var(--border)" }}
+      >
+        <button
+          onClick={() => navigate(-1)}
           className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-sec)" }}>
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            color: "var(--text-sec)",
+          }}
+        >
           Cancel
         </button>
-        <button onClick={handleSubmit} disabled={loading}
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
-          style={{ background: "var(--accent)", color: "#fff" }}>
-          {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+          style={{ background: "var(--accent)", color: "#fff" }}
+        >
+          {loading ? (
+            <Loader2 size={15} className="animate-spin" />
+          ) : (
+            <Save size={15} />
+          )}
           {loading ? "Saving…" : "Save Product"}
         </button>
       </div>
     </div>
   );
 }
-

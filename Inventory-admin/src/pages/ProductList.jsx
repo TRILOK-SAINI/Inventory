@@ -253,7 +253,9 @@ export default function ProductList() {
       if (category) params.set("category", category);
       if (status)   params.set("status",   status);
 
-      const res  = await fetch(`${API}/products?${params}`);
+      const res  = await fetch(`${API}/products?${params}`, {
+        credentials: "include",
+      });
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       setProducts(data.data);
@@ -271,7 +273,10 @@ export default function ProductList() {
   const handleDelete = async () => {
     setDeleteLoading(true);
     try {
-      await fetch(`${API}/products/${deleteTarget._id}`, { method: "DELETE" });
+      await fetch(`${API}/products/${deleteTarget._id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
       setDeleteTarget(null);
       fetchProducts(pagination.page);
     } finally {
@@ -285,6 +290,7 @@ export default function ProductList() {
     try {
       await fetch(`${API}/products/bulk-delete`, {
         method: "DELETE",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: [...selected] }),
       });
@@ -302,6 +308,7 @@ export default function ProductList() {
     try {
       const res  = await fetch(`${API}/products/${product._id}/status`, {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: next }),
       });

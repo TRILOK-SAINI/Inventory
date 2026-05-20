@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  Upload, X, Plus, ImageIcon, Package, Tag, DollarSign,
+  Upload, X, ImageIcon, Package, Tag, DollarSign,
   Hash, Layers, Weight, Ruler, Star, ChevronDown, ArrowLeft, Save, Loader2, Trash2
 } from "lucide-react";
 
@@ -89,7 +89,9 @@ const API = import.meta.env.VITE_API_URL;   // Vite proxy forwards this to http:
   useEffect(() => {
     (async () => {
       try {
-        const res  = await fetch(`${API}/products/${id}`);
+        const res  = await fetch(`${API}/products/${id}`, {
+          credentials: "include",
+        });
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
         const p = data.data;
@@ -121,7 +123,7 @@ const API = import.meta.env.VITE_API_URL;   // Vite proxy forwards this to http:
         setFetching(false);
       }
     })();
-  }, [id]);
+  }, [API, id]);
 
   const set    = (key, val) => { setForm(f => ({ ...f, [key]: val })); setErrors(e => ({ ...e, [key]: "" })); };
   const setDim = (key, val) => setForm(f => ({ ...f, dimensions: { ...f.dimensions, [key]: val } }));
@@ -150,8 +152,16 @@ const API = import.meta.env.VITE_API_URL;   // Vite proxy forwards this to http:
     if (!form.name.trim())        e.name        = "Product name is required";
     if (!form.category)           e.category    = "Please select a category";
     if (!form.description.trim()) e.description = "Description is required";
-    if (!form.price || isNaN(form.price)) e.price = "Enter a valid price";
-    if (!form.quantity || isNaN(form.quantity)) e.quantity = "Enter a valid quantity";
+    if (form.price === "" || isNaN(form.price) || Number(form.price) < 0) {
+      e.price = "Enter a valid price";
+    }
+    if (
+      form.quantity === "" ||
+      isNaN(form.quantity) ||
+      Number(form.quantity) < 0
+    ) {
+      e.quantity = "Enter a valid quantity";
+    }
     if (savedImgs.length + newImages.length === 0) e.images = "At least one image is required";
     return e;
   };
@@ -176,7 +186,11 @@ const API = import.meta.env.VITE_API_URL;   // Vite proxy forwards this to http:
         fd.append(k, typeof v === "object" ? JSON.stringify(v) : v)
       );
 
-      const res  = await fetch(`${API}/products/${id}`, { method: "PUT", body: fd });
+      const res  = await fetch(`${API}/products/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        body: fd,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Update failed");
       navigate("/admin/products");

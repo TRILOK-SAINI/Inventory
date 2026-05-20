@@ -9,77 +9,91 @@ import {
   toggleStatus,
   bulkDelete,
   getProductStats,
+  updateStock,
 } from "../controllers/productController.js";
-// import { protect, adminOnly } from "../middleware/auth.js"; // uncomment when auth is ready
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-/* ── Multer config (memory storage → pass buffer to cloud) ─── */
+/* ── Multer ──────────────────────────────────────────────────── */
 const storage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
   const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  if (allowed.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only JPEG, PNG, WEBP, and GIF images are allowed"), false);
-  }
+  allowed.includes(file.mimetype)
+    ? cb(null, true)
+    : cb(new Error("Only JPEG, PNG, WEBP, GIF allowed"), false);
 };
 
 const upload = multer({
   storage,
   fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024,  // 5 MB per file
-    files:    8,                  // max 8 images per product
-  },
+  limits: { fileSize: 5 * 1024 * 1024, files: 8 },
 });
 
-/* ── Multer error handler ────────────────────────────────────── */
 const handleUpload = (req, res, next) => {
   upload.array("images", 8)(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
+    if (err)
       return res.status(400).json({ success: false, message: err.message });
-    }
-    if (err) {
-      return res.status(400).json({ success: false, message: err.message });
-    }
     next();
   });
 };
 
-/* ═══════════════════════════════════════════════════════════════
-   ROUTES
-═══════════════════════════════════════════════════════════════ */
+/* ── Routes ──────────────────────────────────────────────────── */
 
-// Stats — must be before /:id to avoid conflict
-router.get("/stats", /* protect, adminOnly, */ getProductStats);
+// Stats — super_admin + shop_admin
+router.get(
+  "/stats",
+  protect,
+  authorize("super_admin", "shop_admin"),
+  getProductStats,
+);
 
-// Bulk delete
-router.delete("/bulk-delete", /* protect, adminOnly, */ bulkDelete);
+// Bulk delete — super_admin + shop_admin
+router.delete(
+  "/bulk-delete",
+  protect,
+  authorize("super_admin", "shop_admin"),
+  bulkDelete,
+);
 
-// Collection routes
+// Stock update — staff (daily inventory entry)
+router.patch(
+  "/:id/stock",
+  protect,
+  authorize("staff", "shop_admin", "super_admin"),
+  updateStock,
+);
+
+// Status toggle — super_admin + shop_admin
+router.patch(
+  "/:id/status",
+  protect,
+  authorize("super_admin", "shop_admin"),
+  toggleStatus,
+);
+
+// Collection
 router
   .route("/")
-  .get(/* protect, */ getAllProducts)
-  .post(/* protect, adminOnly, */ handleUpload, createProduct);
+  .get(protect, authorize("super_admin", "shop_admin", "staff"), getAllProducts)
+  .post(
+    protect,
+    authorize("super_admin", "shop_admin"),
+    handleUpload,
+    createProduct,
+  );
 
-// Single resource routes
+// Single resource
 router
   .route("/:id")
-  .get(/* protect, */ getProductById)
-  .put(/* protect, adminOnly, */ handleUpload, updateProduct)
-  .delete(/* protect, adminOnly, */ deleteProduct);
-
-// Status toggle
-router.patch("/:id/status", /* protect, adminOnly, */ toggleStatus);
+  .get(protect, authorize("super_admin", "shop_admin", "staff"), getProductById)
+  .put(
+    protect,
+    authorize("super_admin", "shop_admin"),
+    handleUpload,
+    updateProduct,
+  )
+  .delete(protect, authorize("super_admin", "shop_admin"), deleteProduct);
 
 export default router;
-
-/* ═══════════════════════════════════════════════════════════════
-   MOUNT IN app.js / server.js:
-
-   import productRouter from "./routes/productRoutes.js";
-   app.use("/api/products", productRouter);
-
-═══════════════════════════════════════════════════════════════ */
