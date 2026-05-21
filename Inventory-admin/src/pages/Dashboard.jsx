@@ -52,10 +52,10 @@ const ACTIVITY = [
 ];
 
 const QUICK_LINKS = [
-  { label: "Add New Product", path: "/admin/products/new", icon: <FaPlus /> },
-  { label: "Manage Inventory", path: "/admin/inventory", icon: <FaWarehouse /> },
-  { label: "Product Categories", path: "/admin/categories", icon: <FaList /> },
-  { label: "Sales Reports", path: "/admin/reports", icon: <FaChartLine /> },
+  { label: "Add New Product", path: "/admin/addproduct", icon: <FaPlus /> },
+  { label: "Manage Stock", path: "/admin/inventory-entry", icon: <FaWarehouse /> },
+  { label: "Product List", path: "/admin/products", icon: <FaList /> },
+  { label: "Manage Shops", path: "/admin/shops", icon: <FaChartLine /> },
 ];
 
 export default function Dashboard() {
@@ -87,7 +87,7 @@ export default function Dashboard() {
         {STATS.map((s) => (
           <div
             key={s.label}
-            className="t-card rounded-2xl p-5 hover:translate-y-[-2px] transition-transform shadow-sm"
+            className="t-card rounded-2xl p-5 hover:-translate-y-0.5 transition-transform shadow-sm"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg t-accent-bg t-accent-text border border-(--accent-border)">

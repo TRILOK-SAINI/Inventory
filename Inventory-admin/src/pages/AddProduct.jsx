@@ -365,7 +365,7 @@ export default function AddProduct() {
             Fill in the details below to list a new product
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto sm:flex items-center gap-3 hidden">
           <button
             onClick={() => navigate(-1)}
             className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
@@ -846,7 +846,7 @@ export default function AddProduct() {
 
       {/* Footer actions (mobile-friendly) */}
       <div
-        className="mt-8 flex items-center justify-end gap-3 pt-6 hidden"
+        className="mt-8 flex items-center justify-end gap-3 pt-6 sm:hidden"
         style={{ borderTop: "1px solid var(--border)" }}
       >
         <button

@@ -143,7 +143,6 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -151,7 +150,7 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
   const addToCart = (sp) => {
     const exists = cart.find((c) => c.product === sp.product._id);
     if (exists) {
-      if (exists.quantity >= sp.allocatedQuantity) return;
+      if (exists.quantity >= sp.product.quantity) return;
       setCart(
         cart.map((c) =>
           c.product === sp.product._id ? { ...c, quantity: c.quantity + 1 } : c,
@@ -164,9 +163,9 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
           product: sp.product._id,
           name: sp.product.name,
           sku: sp.product.sku || "",
-          unitPrice: sp.sellingPrice || sp.product.price,
+          unitPrice: sp.product.price,
           quantity: 1,
-          stock: sp.allocatedQuantity,
+          stock: sp.product.quantity,
         },
       ]);
     }
@@ -183,7 +182,7 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
   };
 
   const subtotal = cart.reduce((s, c) => s + c.unitPrice * c.quantity, 0);
-  const total = Math.max(0, subtotal - Number(discount || 0));
+  const total = subtotal;
 
   const handleSubmit = async () => {
     if (cart.length === 0) {
@@ -196,7 +195,6 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
       const { data } = await api.post("/orders", {
         customerName: customerName || "Walk-in Customer",
         customerPhone,
-        discount: Number(discount || 0),
         notes,
         items: cart.map((c) => ({ product: c.product, quantity: c.quantity })),
       });
@@ -285,7 +283,7 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
               )}
               {shopProducts.map((sp) => {
                 const inCart = cart.find((c) => c.product === sp.product._id);
-                const outOfStock = sp.allocatedQuantity === 0;
+                const outOfStock = Number(sp.product.quantity || 0) === 0;
                 return (
                   <div
                     key={sp.product._id}
@@ -329,10 +327,8 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
                         className="text-xs"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        Stock: {sp.allocatedQuantity} | Rs{" "}
-                        {(
-                          sp.sellingPrice || sp.product.price
-                        )?.toLocaleString()}
+                        Stock: {sp.product.quantity || 0} | Rs{" "}
+                        {(sp.product.price || 0).toLocaleString()}
                       </p>
                     </div>
                     {inCart ? (
@@ -358,7 +354,7 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
                         </span>
                         <button
                           onClick={() => updateQty(sp.product._id, 1)}
-                          disabled={inCart.quantity >= sp.allocatedQuantity}
+                          disabled={inCart.quantity >= sp.product.quantity}
                           className="w-7 h-7 rounded-lg flex items-center justify-center disabled:opacity-40"
                           style={{
                             background: "var(--accent-soft)",
@@ -482,28 +478,6 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
                 </div>
               )}
 
-              {/* Discount */}
-              <div className="flex items-center gap-3 mb-3">
-                <label
-                  className="text-xs font-semibold uppercase tracking-widest whitespace-nowrap"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Discount (Rs)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "var(--bg-elevated)",
-                    border: "1px solid var(--border)",
-                    color: "var(--text-primary)",
-                  }}
-                  value={discount}
-                  onChange={(e) => setDiscount(e.target.value)}
-                />
-              </div>
-
               {/* Totals */}
               <div
                 className="rounded-xl p-3 space-y-1.5"
@@ -519,15 +493,6 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
                   <span>Subtotal</span>
                   <span>Rs {subtotal.toLocaleString()}</span>
                 </div>
-                {Number(discount) > 0 && (
-                  <div
-                    className="flex justify-between text-sm"
-                    style={{ color: "var(--danger-text)" }}
-                  >
-                    <span>Discount</span>
-                    <span>− Rs {Number(discount).toLocaleString()}</span>
-                  </div>
-                )}
                 <div
                   className="flex justify-between text-base font-bold pt-1"
                   style={{
@@ -628,8 +593,6 @@ export default function StaffOrders() {
       setShopProducts(
         data.data.map((product) => ({
           product,
-          allocatedQuantity: Number(product.quantity || 0),
-          sellingPrice: product.price,
         })),
       );
     } catch (err) {

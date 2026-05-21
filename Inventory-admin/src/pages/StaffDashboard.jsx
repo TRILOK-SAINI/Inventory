@@ -9,7 +9,6 @@ import {
   Store,
   TrendingUp,
   XCircle,
-  Warehouse,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useNavigate } from "react-router-dom";
@@ -141,7 +140,7 @@ export default function StaffDashboard() {
             <ShoppingCart size={14} /> New Order
           </button>
           <button
-            onClick={() => navigate("/admin/inventory-entry")}
+            onClick={() => navigate("/admin/orders")}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
             style={{
               background: "var(--bg-surface)",
@@ -149,7 +148,7 @@ export default function StaffDashboard() {
               color: "var(--text-sec)",
             }}
           >
-            <Warehouse size={14} /> Update Stock
+            <ShoppingCart size={14} /> Orders
           </button>
         </div>
       </div>
@@ -230,7 +229,7 @@ export default function StaffDashboard() {
         </button>
 
         <button
-          onClick={() => navigate("/admin/inventory-entry")}
+          onClick={() => navigate("/admin/orders")}
           className="rounded-2xl p-5 text-left transition-all hover:scale-[1.01]"
           style={{
             background: "var(--bg-surface)",
@@ -245,14 +244,14 @@ export default function StaffDashboard() {
                 border: "1px solid rgba(234,179,8,0.25)",
               }}
             >
-              <Warehouse size={18} style={{ color: "#eab308" }} />
+              <ShoppingCart size={18} style={{ color: "#eab308" }} />
             </div>
             <h3 className="font-bold" style={{ color: "var(--text-primary)" }}>
-              Inventory Entry
+              Assigned Products
             </h3>
           </div>
           <p className="text-sm" style={{ color: "var(--text-sec)" }}>
-            Update daily stock quantities for products in your shop.
+            Review assigned stock while creating customer orders.
           </p>
           <p
             className="text-xs mt-2 font-semibold"

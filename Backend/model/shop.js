@@ -7,16 +7,6 @@ const shopProductSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
-    allocatedQuantity: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
-    sellingPrice: {
-      type: Number,
-      min: 0,
-      default: null,
-    },
     notes: {
       type: String,
       trim: true,

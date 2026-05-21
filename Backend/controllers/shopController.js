@@ -13,8 +13,6 @@ const normalizeProducts = (products = []) =>
     .filter((item) => item.product)
     .map((item) => ({
       product: item.product,
-      allocatedQuantity: Number(item.allocatedQuantity || 0),
-      sellingPrice: item.sellingPrice === "" || item.sellingPrice == null ? null : Number(item.sellingPrice),
       notes: item.notes || "",
     }));
 

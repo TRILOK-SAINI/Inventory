@@ -45,7 +45,7 @@ const handleUpload = (req, res, next) => {
 router.get(
   "/stats",
   protect,
-  authorize("super_admin", "shop_admin"),
+  authorize("super_admin", "shop_admin", "staff"),
   getProductStats,
 );
 
@@ -53,7 +53,7 @@ router.get(
 router.delete(
   "/bulk-delete",
   protect,
-  authorize("super_admin", "shop_admin"),
+  authorize("super_admin"),
   bulkDelete,
 );
 
@@ -61,7 +61,7 @@ router.delete(
 router.patch(
   "/:id/stock",
   protect,
-  authorize("staff", "shop_admin", "super_admin"),
+  authorize("super_admin"),
   updateStock,
 );
 
@@ -69,7 +69,7 @@ router.patch(
 router.patch(
   "/:id/status",
   protect,
-  authorize("super_admin", "shop_admin"),
+  authorize("super_admin"),
   toggleStatus,
 );
 
@@ -79,7 +79,7 @@ router
   .get(protect, authorize("super_admin", "shop_admin", "staff"), getAllProducts)
   .post(
     protect,
-    authorize("super_admin", "shop_admin"),
+    authorize("super_admin"),
     handleUpload,
     createProduct,
   );
@@ -90,10 +90,10 @@ router
   .get(protect, authorize("super_admin", "shop_admin", "staff"), getProductById)
   .put(
     protect,
-    authorize("super_admin", "shop_admin"),
+    authorize("super_admin"),
     handleUpload,
     updateProduct,
   )
-  .delete(protect, authorize("super_admin", "shop_admin"), deleteProduct);
+  .delete(protect, authorize("super_admin"), deleteProduct);
 
 export default router;

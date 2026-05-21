@@ -39,6 +39,7 @@ const initialForm = {
   pincode: "",
   gstNumber: "",
   status: "active",
+  products: [],
 };
 
 /* ── tiny reusables ────────────────────────────────────────── */
@@ -324,11 +325,36 @@ function ShopForm({
   form,
   errors,
   saving,
+  productOptions,
   onClose,
   onSubmit,
   setField,
 }) {
   if (!open) return null;
+
+  const assignedIds = new Set(
+    (form.products || []).map((item) => String(item.product)),
+  );
+
+  const toggleProduct = (product) => {
+    const products = form.products || [];
+    if (assignedIds.has(product._id)) {
+      setField(
+        "products",
+        products.filter((item) => String(item.product) !== product._id),
+      );
+      return;
+    }
+
+    setField("products", [
+      ...products,
+      {
+        product: product._id,
+        notes: "",
+      },
+    ]);
+  };
+
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto p-4 lg:p-8">
       <div
@@ -545,6 +571,91 @@ function ShopForm({
             </div>
           </div>
 
+          <div
+            className="rounded-2xl p-5 mb-4"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <div
+              className="flex items-center gap-2 mb-5 pb-4"
+              style={{ borderBottom: "1px solid var(--border-sub)" }}
+            >
+              <div
+                className="p-1.5 rounded-lg"
+                style={{ background: "var(--accent-soft)" }}
+              >
+                <Package size={14} style={{ color: "var(--accent-text)" }} />
+              </div>
+              <div>
+                <h3
+                  className="font-semibold text-sm"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Assigned Products
+                </h3>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  Shop admins and staff can sell only these products.
+                </p>
+              </div>
+            </div>
+
+            {productOptions.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                Add products first, then assign them to shops.
+              </p>
+            ) : (
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {productOptions.map((product) => {
+                  const checked = assignedIds.has(product._id);
+
+                  return (
+                    <div
+                      key={product._id}
+                      className="rounded-xl p-3"
+                      style={{
+                        background: checked
+                          ? "var(--accent-soft)"
+                          : "var(--bg-elevated)",
+                        border: `1px solid ${checked ? "var(--accent-border)" : "var(--border)"}`,
+                      }}
+                    >
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleProduct(product)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p
+                                className="text-sm font-semibold truncate"
+                                style={{ color: "var(--text-primary)" }}
+                              >
+                                {product.name}
+                              </p>
+                              <p
+                                className="text-xs font-mono"
+                                style={{ color: "var(--text-muted)" }}
+                              >
+                                {product.sku || "-"} · Stock{" "}
+                                {product.quantity || 0} · Rs{" "}
+                                {(product.price || 0).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Info note */}
           <div
             className="rounded-xl px-4 py-3 text-xs"
@@ -554,8 +665,9 @@ function ShopForm({
               color: "var(--accent-text)",
             }}
           >
-            <strong>Note:</strong> Once the shop is created, the shop admin logs
-            in and manages their own products and staff from their panel.
+            <strong>Note:</strong> Products and stock are managed by the
+            super admin. Shop admins can manage staff and take orders for
+            assigned products.
           </div>
         </div>
       </div>
@@ -671,7 +783,8 @@ function ShopView({ shop, onClose, onEdit }) {
               className="text-xs font-medium"
               style={{ color: "var(--accent-text)" }}
             >
-              Products and staff are managed by the shop admin from their panel.
+              Products are assigned by the super admin. Staff are managed by the
+              shop admin from their panel.
             </p>
           </div>
 
@@ -709,6 +822,7 @@ export default function ShopList() {
   useTheme();
 
   const [shops, setShops] = useState([]);
+  const [productOptions, setProductOptions] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -752,6 +866,19 @@ export default function ShopList() {
     fetchShops(1);
   }, [fetchShops]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await api.get("/products", {
+          params: { page: 1, limit: 200, sort: "name" },
+        });
+        if (data.success) setProductOptions(data.data || []);
+      } catch (err) {
+        setErrors((prev) => ({ ...prev, submit: getApiError(err) }));
+      }
+    })();
+  }, []);
+
   const stats = useMemo(
     () => ({
       total: pagination.total,
@@ -767,7 +894,7 @@ export default function ShopList() {
   };
 
   const openAdd = () => {
-    setFormState(initialForm);
+    setFormState({ ...initialForm, products: [] });
     setErrors({});
     setModal({ open: true, mode: "add", id: null });
   };
@@ -784,6 +911,10 @@ export default function ShopList() {
       pincode: shop.pincode || "",
       gstNumber: shop.gstNumber || "",
       status: shop.status || "active",
+      products: (shop.products || []).map((item) => ({
+        product: item.product?._id || item.product,
+        notes: item.notes || "",
+      })),
     });
     setErrors({});
     setModal({ open: true, mode: "edit", id: shop._id });
@@ -1168,6 +1299,7 @@ export default function ShopList() {
         form={form}
         errors={errors}
         saving={saving}
+        productOptions={productOptions}
         onClose={() => setModal({ open: false, mode: "add", id: null })}
         onSubmit={handleSubmit}
         setField={setField}

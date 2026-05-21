@@ -30,6 +30,27 @@ const getNavSections = (role) => {
             icon: <FaTachometerAlt />,
           },
           { name: "Shops", path: "/admin/shops", icon: <FaStore /> },
+          {
+            name: "Products",
+            icon: <FaBoxOpen />,
+            subLinks: [
+              {
+                name: "Add Product",
+                path: "/admin/addproduct",
+                icon: <FaPlusCircle />,
+              },
+              {
+                name: "Product List",
+                path: "/admin/products",
+                icon: <FaListAlt />,
+              },
+              {
+                name: "Stock Entry",
+                path: "/admin/inventory-entry",
+                icon: <FaWarehouse />,
+              },
+            ],
+          },
         ],
       },
     ];
@@ -46,20 +67,9 @@ const getNavSections = (role) => {
             icon: <FaStoreAlt />,
           },
           {
-            name: "Products",
-            icon: <FaBoxOpen />,
-            subLinks: [
-              {
-                name: "Add Product",
-                path: "/admin/addproduct",
-                icon: <FaPlusCircle />,
-              },
-              {
-                name: "Product List",
-                path: "/admin/products",
-                icon: <FaListAlt />,
-              },
-            ],
+            name: "Orders",
+            path: "/admin/orders",
+            icon: <FaShoppingCart />,
           },
           { name: "Staff", path: "/admin/staff", icon: <FaUsers /> },
         ],
@@ -81,11 +91,6 @@ const getNavSections = (role) => {
             name: "Orders",
             path: "/admin/orders",
             icon: <FaShoppingCart />,
-          },
-          {
-            name: "Inventory Entry",
-            path: "/admin/inventory-entry",
-            icon: <FaWarehouse />,
           },
         ],
       },

@@ -243,7 +243,7 @@ export default function InventoryEntry() {
             Inventory Entry
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Update daily stock quantities for shop products
+            Update product quantities managed by the super admin
           </p>
         </div>
         <button

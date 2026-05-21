@@ -1,4 +1,5 @@
 import Product from "../model/product.js";
+import Shop from "../model/shop.js";
 import { uploadToCloud, deleteFromCloud } from "../utils/CloudUpload.js";
 
 /* ── helpers ──────────────────────────────────────────────────── */
@@ -7,25 +8,31 @@ const paginate = (query, page = 1, limit = 10) => {
   return query.skip(skip).limit(Number(limit));
 };
 
-// Build shopId filter based on user role
-const shopFilter = (user) => {
-  if (user.role === "shop_admin") return { shopId: user.shopId };
-  if (user.role === "staff") return { shopId: user.shopId };
-  return {}; // super_admin sees all
+/**
+ * For super_admin → null (no restriction, query Products directly)
+ * For shop_admin / staff → array of ObjectIds assigned to their shop
+ *   (may be empty array if nothing assigned yet)
+ */
+const getAssignedProductIds = async (user) => {
+  if (user.role === "super_admin") return null;
+  if (!user.shopId) return [];
+  const shop = await Shop.findById(user.shopId)
+    .select("products.product")
+    .lean();
+  return (shop?.products || []).map((item) => item.product).filter(Boolean);
 };
 
 const parseStringArray = (value) => {
   if (!value) return [];
   if (Array.isArray(value)) return value;
   if (typeof value !== "string") return [];
-
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed : [parsed].filter(Boolean);
   } catch {
     return value
       .split(",")
-      .map((item) => item.trim())
+      .map((t) => t.trim())
       .filter(Boolean);
   }
 };
@@ -34,7 +41,6 @@ const normalizeOptionalNumbers = (body) => {
   ["comparePrice", "weight"].forEach((key) => {
     if (body[key] === "") body[key] = null;
   });
-
   if (body.dimensions) {
     ["length", "width", "height"].forEach((key) => {
       if (body.dimensions[key] === "") body.dimensions[key] = null;
@@ -58,8 +64,56 @@ export const getAllProducts = async (req, res) => {
       maxPrice,
     } = req.query;
 
-    const filter = { ...shopFilter(req.user) };
+    const assignedProductIds = await getAssignedProductIds(req.user);
 
+    // ── super_admin: query products directly ──────────────────
+    if (assignedProductIds === null) {
+      const filter = {};
+      if (search) filter.$text = { $search: search };
+      if (category) filter.category = category;
+      if (status) filter.status = status;
+      if (minPrice || maxPrice) {
+        filter.price = {};
+        if (minPrice) filter.price.$gte = Number(minPrice);
+        if (maxPrice) filter.price.$lte = Number(maxPrice);
+      }
+
+      const total = await Product.countDocuments(filter);
+      const products = await paginate(
+        Product.find(filter).sort(sort).lean({ virtuals: true }),
+        page,
+        limit,
+      );
+
+      return res.json({
+        success: true,
+        data: products,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    }
+
+    // ── shop_admin / staff: return only assigned products ─────
+    // Empty assignment → return empty immediately (avoids Mongoose crash)
+    if (assignedProductIds.length === 0) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          total: 0,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: 0,
+        },
+      });
+    }
+
+    // Build a filter on the product documents themselves
+    const filter = { _id: { $in: assignedProductIds } };
     if (search) filter.$text = { $search: search };
     if (category) filter.category = category;
     if (status) filter.status = status;
@@ -71,12 +125,12 @@ export const getAllProducts = async (req, res) => {
 
     const total = await Product.countDocuments(filter);
     const products = await paginate(
-      Product.find(filter).sort(sort).lean(),
+      Product.find(filter).sort(sort).lean({ virtuals: true }),
       page,
       limit,
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: products,
       pagination: {
@@ -96,30 +150,52 @@ export const getAllProducts = async (req, res) => {
 ════════════════════════════════════════════════════════════════ */
 export const getProductById = async (req, res) => {
   try {
-    const filter = { _id: req.params.id, ...shopFilter(req.user) };
-    const product = await Product.findOne(filter);
+    const assignedProductIds = await getAssignedProductIds(req.user);
+
+    // super_admin
+    if (assignedProductIds === null) {
+      const product = await Product.findById(req.params.id).lean({
+        virtuals: true,
+      });
+      if (!product)
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not found" });
+      return res.json({ success: true, data: product });
+    }
+
+    // shop_admin / staff — check assignment
+    const isAssigned = assignedProductIds.some(
+      (id) => id.toString() === req.params.id,
+    );
+    if (!isAssigned) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+    }
+
+    const product = await Product.findById(req.params.id).lean({
+      virtuals: true,
+    });
     if (!product)
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
 
-    res.json({ success: true, data: product });
+    return res.json({ success: true, data: product });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 /* ════════════════════════════════════════════════════════════════
-   POST /api/products   (shop_admin or super_admin)
+   POST /api/products  (super_admin only)
 ════════════════════════════════════════════════════════════════ */
 export const createProduct = async (req, res) => {
   try {
     const body = { ...req.body };
-
-    // Attach shopId for shop_admin
-    if (req.user.role === "shop_admin") {
-      body.shopId = req.user.shopId;
-    }
+    delete body.shopId;
+    body.shopId = null; // products are global; shops get assigned via Shop.products[]
 
     if (body.tags) body.tags = parseStringArray(body.tags);
     if (body.dimensions && typeof body.dimensions === "string") {
@@ -161,18 +237,18 @@ export const createProduct = async (req, res) => {
 };
 
 /* ════════════════════════════════════════════════════════════════
-   PUT /api/products/:id
+   PUT /api/products/:id  (super_admin only)
 ════════════════════════════════════════════════════════════════ */
 export const updateProduct = async (req, res) => {
   try {
-    const filter = { _id: req.params.id, ...shopFilter(req.user) };
-    const product = await Product.findOne(filter);
+    const product = await Product.findById(req.params.id);
     if (!product)
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
 
     const body = { ...req.body };
+    delete body.shopId;
 
     if (body.tags) body.tags = parseStringArray(body.tags);
     if (body.dimensions && typeof body.dimensions === "string") {
@@ -205,7 +281,6 @@ export const updateProduct = async (req, res) => {
 
     Object.assign(product, body);
     await product.save();
-
     res.json({
       success: true,
       data: product,
@@ -217,12 +292,11 @@ export const updateProduct = async (req, res) => {
 };
 
 /* ════════════════════════════════════════════════════════════════
-   DELETE /api/products/:id
+   DELETE /api/products/:id  (super_admin only)
 ════════════════════════════════════════════════════════════════ */
 export const deleteProduct = async (req, res) => {
   try {
-    const filter = { _id: req.params.id, ...shopFilter(req.user) };
-    const product = await Product.findOne(filter);
+    const product = await Product.findById(req.params.id);
     if (!product)
       return res
         .status(404)
@@ -237,6 +311,11 @@ export const deleteProduct = async (req, res) => {
     }
 
     await product.deleteOne();
+    // Remove from any shop assignments
+    await Shop.updateMany(
+      {},
+      { $pull: { products: { product: product._id } } },
+    );
     res.json({ success: true, message: "Product deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -244,7 +323,7 @@ export const deleteProduct = async (req, res) => {
 };
 
 /* ════════════════════════════════════════════════════════════════
-   PATCH /api/products/:id/status
+   PATCH /api/products/:id/status  (super_admin only)
 ════════════════════════════════════════════════════════════════ */
 export const toggleStatus = async (req, res) => {
   try {
@@ -254,10 +333,8 @@ export const toggleStatus = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid status value" });
     }
-
-    const filter = { _id: req.params.id, ...shopFilter(req.user) };
-    const product = await Product.findOneAndUpdate(
-      filter,
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
       { status },
       { new: true, runValidators: true },
     );
@@ -265,7 +342,6 @@ export const toggleStatus = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
-
     res.json({
       success: true,
       data: product,
@@ -277,14 +353,12 @@ export const toggleStatus = async (req, res) => {
 };
 
 /* ════════════════════════════════════════════════════════════════
-   PATCH /api/products/:id/stock
-   Staff: update product quantity (daily inventory entry)
-   Body: { quantity, notes }
+   PATCH /api/products/:id/stock  (super_admin only)
+   Updates the global product quantity (master stock record)
 ════════════════════════════════════════════════════════════════ */
 export const updateStock = async (req, res) => {
   try {
-    const { quantity, notes } = req.body;
-
+    const { quantity } = req.body;
     if (
       quantity === undefined ||
       quantity === null ||
@@ -295,8 +369,7 @@ export const updateStock = async (req, res) => {
         .json({ success: false, message: "Valid quantity is required" });
     }
 
-    const filter = { _id: req.params.id, ...shopFilter(req.user) };
-    const product = await Product.findOne(filter);
+    const product = await Product.findById(req.params.id);
     if (!product)
       return res
         .status(404)
@@ -317,19 +390,18 @@ export const updateStock = async (req, res) => {
 };
 
 /* ════════════════════════════════════════════════════════════════
-   DELETE /api/products/bulk-delete
+   DELETE /api/products/bulk-delete  (super_admin only)
 ════════════════════════════════════════════════════════════════ */
 export const bulkDelete = async (req, res) => {
   try {
     const { ids } = req.body;
-    if (!ids || !ids.length)
+    if (!ids || !ids.length) {
       return res
         .status(400)
         .json({ success: false, message: "No product IDs provided" });
+    }
 
-    const filter = { _id: { $in: ids }, ...shopFilter(req.user) };
-    const products = await Product.find(filter);
-
+    const products = await Product.find({ _id: { $in: ids } });
     await Promise.all(
       products.flatMap((p) =>
         (p.images || []).map(
@@ -338,7 +410,11 @@ export const bulkDelete = async (req, res) => {
       ),
     );
 
-    await Product.deleteMany(filter);
+    await Product.deleteMany({ _id: { $in: ids } });
+    await Shop.updateMany(
+      {},
+      { $pull: { products: { product: { $in: ids } } } },
+    );
     res.json({
       success: true,
       message: `${products.length} product(s) deleted`,
@@ -353,10 +429,48 @@ export const bulkDelete = async (req, res) => {
 ════════════════════════════════════════════════════════════════ */
 export const getProductStats = async (req, res) => {
   try {
-    const matchFilter = shopFilter(req.user);
+    const assignedProductIds = await getAssignedProductIds(req.user);
 
+    // shop_admin / staff — derive stats from shop assignment
+    if (assignedProductIds !== null) {
+      if (assignedProductIds.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            total: 0,
+            active: 0,
+            inactive: 0,
+            draft: 0,
+            totalQty: 0,
+            outOfStock: 0,
+          },
+        });
+      }
+
+      const [stats] = await Product.aggregate([
+        { $match: { _id: { $in: assignedProductIds } } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            active: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } },
+            inactive: { $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0] } },
+            draft: { $sum: { $cond: [{ $eq: ["$status", "draft"] }, 1, 0] } },
+            totalQty: { $sum: "$quantity" },
+            outOfStock: { $sum: { $cond: [{ $lte: ["$quantity", 0] }, 1, 0] } },
+          },
+        },
+      ]);
+
+      return res.json({
+        success: true,
+        data: stats || {},
+      });
+    }
+
+    // super_admin — aggregate directly on Product collection
     const [stats] = await Product.aggregate([
-      { $match: matchFilter },
+      { $match: {} },
       {
         $group: {
           _id: null,

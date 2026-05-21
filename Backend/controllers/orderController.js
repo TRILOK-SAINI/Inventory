@@ -6,20 +6,18 @@ import Shop from "../model/shop.js";
 export const createOrder = async (req, res) => {
   try {
     const shopId = req.user.shopId;
-    const { customerName, customerPhone, items, discount = 0, notes } = req.body;
+    const { customerName, customerPhone, items, notes } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: "Order must have at least one item" });
     }
 
-    // Load shop to verify fallback assigned inventory
+    // Load shop to verify assigned products.
     const shop = await Shop.findById(shopId).populate("products.product");
     if (!shop) return res.status(404).json({ success: false, message: "Shop not found" });
 
-    // Validate each item against the shop's own products first.
-    // Older shop allocations are still supported as a fallback.
+    // Validate each item against products assigned by the super admin.
     const enrichedItems = [];
-    const stockUpdates = [];
     for (const item of items) {
       const quantity = Number(item.quantity);
       if (!quantity || quantity < 1) {
@@ -27,32 +25,6 @@ export const createOrder = async (req, res) => {
           success: false,
           message: "Each order item must have a valid quantity",
         });
-      }
-
-      const product = await Product.findOne({
-        _id: item.product,
-        shopId,
-        status: "active",
-      });
-
-      if (product) {
-        if (product.quantity < quantity) {
-          return res.status(400).json({
-            success: false,
-            message: `Insufficient stock for "${product.name}". Available: ${product.quantity}`,
-          });
-        }
-
-        enrichedItems.push({
-          product: product._id,
-          name: product.name,
-          sku: product.sku || "",
-          quantity,
-          unitPrice: product.price,
-          total: quantity * product.price,
-        });
-        stockUpdates.push({ source: "product", product: product._id, quantity });
-        continue;
       }
 
       const shopProduct = shop.products.find(
@@ -64,10 +36,16 @@ export const createOrder = async (req, res) => {
           message: `Product not found in your shop inventory`,
         });
       }
-      if (shopProduct.allocatedQuantity < quantity) {
+      if (shopProduct.product.status !== "active") {
         return res.status(400).json({
           success: false,
-          message: `Insufficient stock for "${shopProduct.product.name}". Available: ${shopProduct.allocatedQuantity}`,
+          message: `"${shopProduct.product.name}" is not active for sale`,
+        });
+      }
+      if (shopProduct.product.quantity < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for "${shopProduct.product.name}". Available: ${shopProduct.product.quantity}`,
         });
       }
       enrichedItems.push({
@@ -75,41 +53,62 @@ export const createOrder = async (req, res) => {
         name: shopProduct.product.name,
         sku: shopProduct.product.sku || "",
         quantity,
-        unitPrice: shopProduct.sellingPrice || shopProduct.product.price,
-        total: quantity * (shopProduct.sellingPrice || shopProduct.product.price),
+        unitPrice: shopProduct.product.price,
+        total: quantity * shopProduct.product.price,
       });
-      stockUpdates.push({ source: "shop", product: shopProduct.product._id, quantity });
     }
 
     const subtotal = enrichedItems.reduce((s, i) => s + i.total, 0);
-    const total = Math.max(0, subtotal - discount);
+    const total = subtotal;
+    const deductedItems = [];
 
-    const order = await Order.create({
-      shopId,
-      takenBy: req.user._id,
-      customerName: customerName || "Walk-in Customer",
-      customerPhone: customerPhone || "",
-      items: enrichedItems,
-      subtotal,
-      discount,
-      total,
-      notes: notes || "",
-      status: "pending",
-    });
+    for (const item of enrichedItems) {
+      const result = await Product.updateOne(
+        { _id: item.product, status: "active", quantity: { $gte: item.quantity } },
+        { $inc: { quantity: -item.quantity } },
+      );
 
-    // Deduct stock immediately on order creation.
-    for (const item of stockUpdates) {
-      if (item.source === "product") {
-        await Product.updateOne(
-          { _id: item.product, shopId },
-          { $inc: { quantity: -item.quantity } }
+      if (result.modifiedCount !== 1) {
+        await Promise.all(
+          deductedItems.map((deducted) =>
+            Product.updateOne(
+              { _id: deducted.product },
+              { $inc: { quantity: deducted.quantity } },
+            ),
+          ),
         );
-      } else {
-        await Shop.updateOne(
-          { _id: shopId, "products.product": item.product },
-          { $inc: { "products.$.allocatedQuantity": -item.quantity } }
-        );
+        return res.status(400).json({
+          success: false,
+          message: "Product stock changed. Please refresh and try again.",
+        });
       }
+
+      deductedItems.push(item);
+    }
+
+    let order;
+    try {
+      order = await Order.create({
+        shopId,
+        takenBy: req.user._id,
+        customerName: customerName || "Walk-in Customer",
+        customerPhone: customerPhone || "",
+        items: enrichedItems,
+        subtotal,
+        total,
+        notes: notes || "",
+        status: "pending",
+      });
+    } catch (err) {
+      await Promise.all(
+        deductedItems.map((deducted) =>
+          Product.updateOne(
+            { _id: deducted.product },
+            { $inc: { quantity: deducted.quantity } },
+          ),
+        ),
+      );
+      throw err;
     }
 
     const populated = await Order.findById(order._id).populate("takenBy", "name email");
@@ -178,19 +177,12 @@ export const cancelOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: `Order is already ${order.status}` });
     }
 
-    // Restore stock to the same source used by the current shop flow.
+    // Restore master product stock.
     for (const item of order.items) {
-      const result = await Product.updateOne(
-        { _id: item.product, shopId },
-        { $inc: { quantity: item.quantity } }
+      await Product.updateOne(
+        { _id: item.product },
+        { $inc: { quantity: item.quantity } },
       );
-
-      if (result.matchedCount === 0) {
-        await Shop.updateOne(
-          { _id: shopId, "products.product": item.product },
-          { $inc: { "products.$.allocatedQuantity": item.quantity } }
-        );
-      }
     }
 
     order.status = "cancelled";

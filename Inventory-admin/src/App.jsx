@@ -20,7 +20,6 @@ export default function App() {
       <Route path="/" element={<Navigate to="/admin/login" replace />} />
       <Route path="/admin/login" element={<Login />} />
 
-      {/* Protected shell — all roles */}
       <Route
         path="/admin"
         element={
@@ -29,7 +28,6 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        {/* ── super_admin ─────────────────────────────────── */}
         <Route
           path="dashboard"
           element={
@@ -46,37 +44,44 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* ── shop_admin ──────────────────────────────────── */}
         <Route
-          path="shop-dashboard"
+          path="products"
           element={
-            <ProtectedRoute allowedRoles={["shop_admin"]}>
-              <ShopDashboard />
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <ProductList />
             </ProtectedRoute>
           }
         />
         <Route
           path="addproduct"
           element={
-            <ProtectedRoute allowedRoles={["shop_admin"]}>
+            <ProtectedRoute allowedRoles={["super_admin"]}>
               <AddProduct />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="products"
-          element={
-            <ProtectedRoute allowedRoles={["shop_admin"]}>
-              <ProductList />
             </ProtectedRoute>
           }
         />
         <Route
           path="editproduct/:id"
           element={
-            <ProtectedRoute allowedRoles={["shop_admin"]}>
+            <ProtectedRoute allowedRoles={["super_admin"]}>
               <EditProduct />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="inventory-entry"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <InventoryEntry />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="shop-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["shop_admin"]}>
+              <ShopDashboard />
             </ProtectedRoute>
           }
         />
@@ -88,29 +93,20 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="orders"
+          element={
+            <ProtectedRoute allowedRoles={["shop_admin", "staff"]}>
+              <StaffOrders />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* ── staff ───────────────────────────────────────── */}
         <Route
           path="staff-dashboard"
           element={
             <ProtectedRoute allowedRoles={["staff"]}>
               <StaffDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="orders"
-          element={
-            <ProtectedRoute allowedRoles={["staff"]}>
-              <StaffOrders />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="inventory-entry"
-          element={
-            <ProtectedRoute allowedRoles={["staff"]}>
-              <InventoryEntry />
             </ProtectedRoute>
           }
         />
