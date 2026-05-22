@@ -9,7 +9,7 @@ import authRoute from "./routes/authRoute.js";
 import shopRoute from "./routes/shopRoute.js";
 import staffRoute from "./routes/staffRoute.js";
 import orderRoute from "./routes/orderRoute.js";
-import stockEntryRoute   from "./routes/stockEntryRoute.js";
+import stockEntryRoute from "./routes/stockEntryRoute.js";
 
 const app = express();
 

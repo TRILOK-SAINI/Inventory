@@ -287,7 +287,7 @@ function StaffForm({
       >
         {/* Header */}
         <div
-          className="flex items-center gap-4 px-5 py-4 flex-shrink-0"
+          className="flex items-center gap-4 px-5 py-4 shrink-0"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <div
@@ -533,7 +533,7 @@ function StaffForm({
 
         {/* Footer */}
         <div
-          className="flex gap-3 px-5 py-4 flex-shrink-0"
+          className="flex gap-3 px-5 py-4 shrink-0"
           style={{ borderTop: "1px solid var(--border)" }}
         >
           <button
