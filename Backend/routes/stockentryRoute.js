@@ -1,0 +1,13 @@
+import express from "express";
+import { getReport, getCalendarDates } from "../controllers/stockEntryController.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
+
+const router = express.Router();
+
+// Only super_admin can view stock entry reports
+router.use(protect, authorize("super_admin"));
+
+router.get("/report", getReport);
+router.get("/calendar", getCalendarDates);
+
+export default router;

@@ -7,17 +7,24 @@ import {
   toggleStaffStatus,
 } from "../controllers/staffController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
+import multer from "multer";
 
 const router = express.Router();
 
+const upload = multer({ storage: multer.memoryStorage() });
 // All routes: shop_admin only
 router.use(protect);
 
 router.get("/", authorize("shop_admin"), getMyStaff);
 
-router.post("/", authorize("shop_admin"), createStaff);
+router.post("/", authorize("shop_admin"), upload.single("photo"), createStaff);
 
-router.put("/:id", authorize("shop_admin"), updateStaff);
+router.put(
+  "/:id",
+  authorize("shop_admin"),
+  upload.single("photo"),
+  updateStaff,
+);
 
 router.delete("/:id", authorize("shop_admin"), deleteStaff);
 

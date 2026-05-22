@@ -17,10 +17,10 @@ cloudinary.config({
  * @param {Express.Multer.File} file
  * @returns {Promise<{ secure_url: string, public_id: string }>}
  */
-export const uploadToCloud = (file) =>
+export const uploadToCloud = (file,folder="products") =>
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: "products", resource_type: "image" },
+      { folder: `${folder?folder:"products"}`, resource_type: "image" },
       (err, result) => (err ? reject(err) : resolve(result))
     );
     streamifier.createReadStream(file.buffer).pipe(stream);

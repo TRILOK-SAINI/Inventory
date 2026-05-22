@@ -9,6 +9,7 @@ import authRoute from "./routes/authRoute.js";
 import shopRoute from "./routes/shopRoute.js";
 import staffRoute from "./routes/staffRoute.js";
 import orderRoute from "./routes/orderRoute.js";
+import stockEntryRoute   from "./routes/stockEntryRoute.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api/products", productRoute);
 app.use("/api/shops", shopRoute);
 app.use("/api/staff", staffRoute);
 app.use("/api/orders", orderRoute);
+app.use("/api/stock-entries", stockEntryRoute);
 
 const PORT = process.env.PORT || 5000;
 

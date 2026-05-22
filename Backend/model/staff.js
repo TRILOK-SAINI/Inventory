@@ -20,6 +20,26 @@ const staffSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other", "prefer_not", ""],
+      default: "",
+    },
+    age: {
+      type: Number,
+      min: 18,
+      max: 100,
+      default: null,
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    photo: {
+      url: { type: String, default: "" },
+      publicId: { type: String, default: "" },
+    },
     role: {
       type: String,
       default: "staff",
@@ -48,7 +68,7 @@ const staffSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Staff = mongoose.model("Staff", staffSchema);

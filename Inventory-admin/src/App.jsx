@@ -13,6 +13,7 @@ import StaffList from "./pages/StaffList";
 import StaffDashboard from "./pages/StaffDashboard";
 import StaffOrders from "./pages/StaffOrders";
 import InventoryEntry from "./pages/InventoryEntry";
+import StockReport from "./pages/StockReport";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           </ProtectedRoute>
         }
       >
+        {/* ── super_admin ──────────────────────────────────── */}
         <Route
           path="dashboard"
           element={
@@ -68,6 +70,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="inventory-entry"
           element={
@@ -76,7 +79,17 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
+        <Route
+          path="stock-report"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <StockReport />
+            </ProtectedRoute>
+          }
+        />
 
+        {/* ── shop_admin ───────────────────────────────────── */}
         <Route
           path="shop-dashboard"
           element={
@@ -102,6 +115,7 @@ export default function App() {
           }
         />
 
+        {/* ── staff ───────────────────────────────────────── */}
         <Route
           path="staff-dashboard"
           element={

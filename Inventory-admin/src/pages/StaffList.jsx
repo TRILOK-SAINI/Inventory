@@ -16,6 +16,10 @@ import {
   UserX,
   X,
   Briefcase,
+  Camera,
+  Hash,
+  MapPin,
+  ChevronDown,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import api, { getApiError } from "../lib/api";
@@ -234,7 +238,17 @@ const ConfirmDialog = ({ target, loading, onCancel, onConfirm }) => {
   );
 };
 
-const initialForm = { name: "", email: "", phone: "", designation: "" };
+const initialForm = {
+  name: "",
+  email: "",
+  phone: "",
+  designation: "",
+  age: "",
+  gender: "",
+  address: "",
+  photo: null,
+  photoFile: null,
+};
 
 function StaffForm({
   open,
@@ -247,21 +261,33 @@ function StaffForm({
   setField,
 }) {
   if (!open) return null;
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setField("photoFile", file); // real File for FormData
+    const reader = new FileReader();
+    reader.onload = () => setField("photo", reader.result); // base64 just for preview
+    reader.readAsDataURL(file);
+  };
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
+
       <div
-        className="relative w-full max-w-lg rounded-2xl shadow-2xl"
+        className="relative w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col"
         style={{
           background: "var(--bg-base)",
           border: "1px solid var(--border)",
+          maxHeight: "90vh",
         }}
       >
+        {/* Header */}
         <div
-          className="flex items-center gap-4 px-5 py-4"
+          className="flex items-center gap-4 px-5 py-4 flex-shrink-0"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <div
@@ -296,7 +322,8 @@ function StaffForm({
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        {/* Scrollable Body */}
+        <div className="p-5 space-y-4 overflow-y-auto flex-1">
           {errors.submit && (
             <div
               className="px-4 py-3 rounded-xl text-sm"
@@ -310,6 +337,44 @@ function StaffForm({
             </div>
           )}
 
+          {/* Photo Upload */}
+          <div className="flex flex-col items-center gap-2">
+            <div
+              className="relative w-20 h-20 rounded-full overflow-hidden flex items-center justify-center"
+              style={{
+                background: "var(--bg-surface)",
+                border: "2px dashed var(--border)",
+              }}
+            >
+              {form.photo ? (
+                <img
+                  src={form.photo}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Camera size={24} style={{ color: "var(--text-muted)" }} />
+              )}
+            </div>
+            <label
+              className="cursor-pointer text-xs font-medium px-3 py-1.5 rounded-lg"
+              style={{
+                background: "var(--accent-soft)",
+                color: "var(--accent-text)",
+                border: "1px solid var(--accent-border, var(--border))",
+              }}
+            >
+              {form.photo ? "Change Photo" : "Upload Photo"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+            </label>
+          </div>
+
+          {/* Row 1: Name + Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label required>Full Name</Label>
@@ -320,6 +385,14 @@ function StaffForm({
                 error={errors.name}
                 placeholder="Staff member name"
               />
+              {errors.name && (
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--danger-text)" }}
+                >
+                  {errors.name}
+                </p>
+              )}
             </div>
             <div>
               <Label required>Email</Label>
@@ -332,15 +405,39 @@ function StaffForm({
                 placeholder="staff@example.com"
                 disabled={mode === "edit"}
               />
+              {errors.email && (
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--danger-text)" }}
+                >
+                  {errors.email}
+                </p>
+              )}
             </div>
+          </div>
+
+          {/* Row 2: Phone + Designation */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Phone</Label>
               <Input
                 icon={Phone}
                 value={form.phone}
-                onChange={(e) => setField("phone", e.target.value)}
-                placeholder="+91 98765 43210"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setField("phone", val);
+                }}
+                error={errors.phone}
+                placeholder="10-digit number"
               />
+              {errors.phone && (
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--danger-text)" }}
+                >
+                  {errors.phone}
+                </p>
+              )}
             </div>
             <div>
               <Label>Designation</Label>
@@ -353,36 +450,120 @@ function StaffForm({
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-              style={{
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border)",
-                color: "var(--text-sec)",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onSubmit}
-              disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60"
-              style={{ background: "var(--accent)", color: "#fff" }}
-            >
-              {saving ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Save size={14} />
+          {/* Row 3: Age + Gender */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Age</Label>
+              <Input
+                icon={Hash}
+                type="number"
+                value={form.age}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 3);
+                  setField("age", val);
+                }}
+                error={errors.age}
+                placeholder="e.g. 28"
+              />
+              {errors.age && (
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--danger-text)" }}
+                >
+                  {errors.age}
+                </p>
               )}
-              {saving
-                ? "Saving..."
-                : mode === "edit"
-                  ? "Save Changes"
-                  : "Add Staff"}
-            </button>
+            </div>
+            <div>
+              <Label>Gender</Label>
+              <div className="relative mt-1">
+                <select
+                  value={form.gender}
+                  onChange={(e) => setField("gender", e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm appearance-none pr-8"
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: `1px solid var(--border)`,
+                    color: form.gender
+                      ? "var(--text-primary)"
+                      : "var(--text-muted)",
+                    outline: "none",
+                  }}
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer_not">Prefer not to say</option>
+                </select>
+                <ChevronDown
+                  size={14}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: "var(--text-muted)" }}
+                />
+              </div>
+            </div>
           </div>
+
+          {/* Row 4: Address full width */}
+          <div>
+            <Label>Address</Label>
+            <div className="relative mt-1">
+              <MapPin
+                size={14}
+                className="absolute left-3 top-3 pointer-events-none"
+                style={{ color: "var(--text-muted)" }}
+              />
+              <textarea
+                value={form.address}
+                onChange={(e) => setField("address", e.target.value)}
+                placeholder="Street, City, State, PIN"
+                rows={3}
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm resize-none"
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="flex gap-3 px-5 py-4 flex-shrink-0"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+              color: "var(--text-sec)",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onSubmit}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60"
+            style={{ background: "var(--accent)", color: "#fff" }}
+          >
+            {saving ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Save size={14} />
+            )}
+            {saving
+              ? "Saving..."
+              : mode === "edit"
+                ? "Save Changes"
+                : "Add Staff"}
+          </button>
         </div>
       </div>
     </div>
@@ -436,6 +617,11 @@ export default function StaffList() {
       email: member.email,
       phone: member.phone || "",
       designation: member.designation || "",
+      age: member.age || "",
+      gender: member.gender || "",
+      address: member.address || "",
+      photo: member.photo?.url || "", // show existing URL as preview
+      photoFile: null, // no new file yet
     });
     setErrors({});
     setModal({ open: true, mode: "edit", id: member._id });
@@ -445,6 +631,13 @@ export default function StaffList() {
     const next = {};
     if (!form.name.trim()) next.name = "Name is required";
     if (!form.email.trim()) next.email = "Email is required";
+    if (form.phone && !/^\d{10}$/.test(form.phone))
+      next.phone = "Phone must be exactly 10 digits";
+    if (
+      form.age &&
+      (isNaN(form.age) || Number(form.age) < 18 || Number(form.age) > 100)
+    )
+      next.age = "Enter a valid age between 18 and 100";
     return next;
   };
 
@@ -454,11 +647,27 @@ export default function StaffList() {
       setErrors(errs);
       return;
     }
+
     setSaving(true);
     try {
+      const fd = new FormData();
+      fd.append("name", form.name);
+      fd.append("email", form.email);
+      fd.append("phone", form.phone);
+      fd.append("designation", form.designation);
+      fd.append("gender", form.gender);
+      fd.append("age", form.age);
+      fd.append("address", form.address);
+
+      // only append photo if it's a new file (File object), not an existing URL
+      if (form.photoFile) fd.append("photo", form.photoFile);
+
       const url = `/staff${modal.mode === "edit" ? `/${modal.id}` : ""}`;
       const method = modal.mode === "edit" ? "put" : "post";
-      const { data } = await api[method](url, form);
+      const { data } = await api[method](url, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       setModal({ open: false, mode: "add", id: null });
       fetchStaff();
       if (modal.mode === "add") {
