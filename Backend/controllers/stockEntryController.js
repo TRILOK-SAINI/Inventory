@@ -1,6 +1,8 @@
 import StockEntry from "../model/stockEntry.js";
 import Product from "../model/product.js";
 
+import ExcelJS from "exceljs";
+
 /* ── date helpers ──────────────────────────────────────────── */
 function isoWeek(date) {
   const d = new Date(date);
@@ -164,5 +166,89 @@ export const getCalendarDates = async (req, res) => {
     res.json({ success: true, data: dates.sort() });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/* ════════════════════════════════════════════════════════════════
+   GET /api/stock-entries/report/download
+   Download stock report as Excel
+════════════════════════════════════════════════════════════════ */
+export const downloadReport = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const {
+      mode = "day",
+      date = toYMD(now),
+      week = String(isoWeek(now)),
+      month = String(now.getMonth() + 1),
+      year = String(now.getFullYear()),
+    } = req.query;
+
+    let filter = {};
+
+    if (mode === "day") {
+      filter.date = date;
+    } else if (mode === "week") {
+      filter.year = Number(year);
+      filter.week = Number(week);
+    } else if (mode === "month") {
+      filter.year = Number(year);
+      filter.month = Number(month);
+    }
+
+    const entries = await StockEntry.find(filter)
+      .sort("-createdAt")
+      .populate("enteredBy", "name email")
+      .lean();
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Stock Report");
+
+    worksheet.columns = [
+      { header: "Product", key: "productName", width: 28 },
+      { header: "SKU", key: "productSku", width: 20 },
+      { header: "Category", key: "category", width: 20 },
+      { header: "Previous Qty", key: "previousQty", width: 15 },
+      { header: "New Qty", key: "newQty", width: 15 },
+      { header: "Change", key: "change", width: 12 },
+      { header: "Notes", key: "notes", width: 35 },
+      { header: "Entered By", key: "enteredBy", width: 25 },
+      { header: "Date & Time", key: "createdAt", width: 24 },
+    ];
+
+    worksheet.getRow(1).font = { bold: true };
+
+    entries.forEach((entry) => {
+      worksheet.addRow({
+        productName: entry.productName,
+        productSku: entry.productSku || "-",
+        category: entry.category || "-",
+        previousQty: entry.previousQty,
+        newQty: entry.newQty,
+        change: entry.change,
+        notes: entry.notes || "-",
+        enteredBy: entry.enteredBy?.name || "-",
+        createdAt: new Date(entry.createdAt).toLocaleString("en-IN"),
+      });
+    });
+
+    const fileName = `stock-report-${mode}-${Date.now()}.xlsx`;
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+
+    await workbook.xlsx.write(res);
+
+    res.end();
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

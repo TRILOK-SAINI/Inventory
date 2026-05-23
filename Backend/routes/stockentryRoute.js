@@ -1,5 +1,9 @@
 import express from "express";
-import { getReport, getCalendarDates } from "../controllers/stockEntryController.js";
+import {
+  getReport,
+  getCalendarDates,
+  downloadReport,
+} from "../controllers/stockEntryController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -9,5 +13,6 @@ router.use(protect, authorize("super_admin"));
 
 router.get("/report", getReport);
 router.get("/calendar", getCalendarDates);
+router.get("/report/download", downloadReport);
 
 export default router;

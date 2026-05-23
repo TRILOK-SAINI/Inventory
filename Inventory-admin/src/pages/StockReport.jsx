@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Download,
   Loader2,
   Package,
   RefreshCw,
@@ -298,6 +299,50 @@ export function ReportTab() {
       minute: "2-digit",
     });
 
+  const downloadExcel = async () => {
+    try {
+      const params = new URLSearchParams({
+        mode,
+        year: selYear,
+      });
+
+      if (mode === "day") params.append("date", selectedDate);
+      if (mode === "week") params.append("week", selWeek);
+      if (mode === "month") params.append("month", selMonth);
+
+      const response = await api.get(
+        `/stock-entries/report/download?${params.toString()}`,
+        {
+          responseType: "blob",
+        },
+      );
+
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
+
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+
+      const disposition = response.headers["content-disposition"];
+      const fileName =
+        disposition?.split("filename=")[1]?.replace(/"/g, "") ||
+        "stock-report.xlsx";
+
+      link.setAttribute("download", fileName);
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(getApiError(err));
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Controls row */}
@@ -337,16 +382,31 @@ export function ReportTab() {
             })}
         </div>
 
-        <button
-          onClick={() => fetchReport(1)}
-          className="ml-auto p-2 rounded-xl"
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          <RefreshCw size={13} style={{ color: "var(--text-muted)" }} />
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={downloadExcel}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold"
+            style={{
+              background: "var(--accent)",
+              color: "#fff",
+              border: "1px solid var(--accent)",
+            }}
+          >
+            <Download size={14} />
+            Download Excel
+          </button>
+
+          <button
+            onClick={() => fetchReport(1)}
+            className="p-2 rounded-xl"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <RefreshCw size={13} style={{ color: "var(--text-muted)" }} />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
