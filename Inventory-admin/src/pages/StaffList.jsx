@@ -22,6 +22,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 import api, { getApiError } from "../lib/api";
 
 const Label = ({ children, required }) => (
@@ -572,6 +573,8 @@ function StaffForm({
 
 export default function StaffList() {
   useTheme();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -719,7 +722,9 @@ export default function StaffList() {
             Staff
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Manage staff members for your shop
+            {isSuperAdmin
+              ? "Manage staff members for the super admin inventory"
+              : "Manage staff members for your shop"}
           </p>
         </div>
         <button

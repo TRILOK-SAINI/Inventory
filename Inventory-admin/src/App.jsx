@@ -101,7 +101,7 @@ export default function App() {
         <Route
           path="staff"
           element={
-            <ProtectedRoute allowedRoles={["shop_admin"]}>
+            <ProtectedRoute allowedRoles={["super_admin", "shop_admin"]}>
               <StaffList />
             </ProtectedRoute>
           }

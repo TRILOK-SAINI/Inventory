@@ -46,6 +46,7 @@ const getNavSections = (role) => {
               },
             ],
           },
+          { name: "Staff", path: "/admin/staff", icon: <FaUsers /> },
           {
             name: "Stock Management",
             icon: <FaWarehouse />,

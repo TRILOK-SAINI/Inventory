@@ -2,6 +2,8 @@ import Order from "../model/order.js";
 import Product from "../model/product.js";
 import Shop from "../model/shop.js";
 
+const hasGlobalStaffInventory = (req) => req.user.role === "staff" && !req.user.shopId;
+
 // Staff: place a new order
 export const createOrder = async (req, res) => {
   try {
@@ -11,51 +13,90 @@ export const createOrder = async (req, res) => {
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: "Order must have at least one item" });
     }
+    if (!shopId && !hasGlobalStaffInventory(req)) {
+      return res.status(404).json({ success: false, message: "No shop assigned to this user" });
+    }
 
-    // Load shop to verify assigned products.
-    const shop = await Shop.findById(shopId).populate("products.product");
-    if (!shop) return res.status(404).json({ success: false, message: "Shop not found" });
-
-    // Validate each item against products assigned by the super admin.
     const enrichedItems = [];
-    for (const item of items) {
-      const quantity = Number(item.quantity);
-      if (!quantity || quantity < 1) {
-        return res.status(400).json({
-          success: false,
-          message: "Each order item must have a valid quantity",
-        });
-      }
 
-      const shopProduct = shop.products.find(
-        (sp) => sp.product?._id?.toString() === item.product
-      );
-      if (!shopProduct) {
-        return res.status(400).json({
-          success: false,
-          message: `Product not found in your shop inventory`,
+    if (shopId) {
+      // Load shop to verify assigned products.
+      const shop = await Shop.findById(shopId).populate("products.product");
+      if (!shop) return res.status(404).json({ success: false, message: "Shop not found" });
+
+      // Validate each item against products assigned by the super admin.
+      for (const item of items) {
+        const quantity = Number(item.quantity);
+        if (!quantity || quantity < 1) {
+          return res.status(400).json({
+            success: false,
+            message: "Each order item must have a valid quantity",
+          });
+        }
+
+        const shopProduct = shop.products.find(
+          (sp) => sp.product?._id?.toString() === item.product
+        );
+        if (!shopProduct) {
+          return res.status(400).json({
+            success: false,
+            message: `Product not found in your shop inventory`,
+          });
+        }
+        if (shopProduct.product.status !== "active") {
+          return res.status(400).json({
+            success: false,
+            message: `"${shopProduct.product.name}" is not active for sale`,
+          });
+        }
+        if (shopProduct.product.quantity < quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for "${shopProduct.product.name}". Available: ${shopProduct.product.quantity}`,
+          });
+        }
+        enrichedItems.push({
+          product: shopProduct.product._id,
+          name: shopProduct.product.name,
+          sku: shopProduct.product.sku || "",
+          quantity,
+          unitPrice: shopProduct.product.price,
+          total: quantity * shopProduct.product.price,
         });
       }
-      if (shopProduct.product.status !== "active") {
-        return res.status(400).json({
-          success: false,
-          message: `"${shopProduct.product.name}" is not active for sale`,
+    } else {
+      for (const item of items) {
+        const quantity = Number(item.quantity);
+        if (!quantity || quantity < 1) {
+          return res.status(400).json({
+            success: false,
+            message: "Each order item must have a valid quantity",
+          });
+        }
+
+        const product = await Product.findById(item.product).lean();
+        if (!product || product.status !== "active") {
+          return res.status(400).json({
+            success: false,
+            message: "Product not found in super admin inventory",
+          });
+        }
+        if (product.quantity < quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for "${product.name}". Available: ${product.quantity}`,
+          });
+        }
+
+        enrichedItems.push({
+          product: product._id,
+          name: product.name,
+          sku: product.sku || "",
+          quantity,
+          unitPrice: product.price,
+          total: quantity * product.price,
         });
       }
-      if (shopProduct.product.quantity < quantity) {
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient stock for "${shopProduct.product.name}". Available: ${shopProduct.product.quantity}`,
-        });
-      }
-      enrichedItems.push({
-        product: shopProduct.product._id,
-        name: shopProduct.product.name,
-        sku: shopProduct.product.sku || "",
-        quantity,
-        unitPrice: shopProduct.product.price,
-        total: quantity * shopProduct.product.price,
-      });
     }
 
     const subtotal = enrichedItems.reduce((s, i) => s + i.total, 0);
@@ -123,6 +164,9 @@ export const createOrder = async (req, res) => {
 export const getShopOrders = async (req, res) => {
   try {
     const shopId = req.user.shopId;
+    if (!shopId && !hasGlobalStaffInventory(req)) {
+      return res.status(404).json({ success: false, message: "No shop assigned to this user" });
+    }
     const { page = 1, limit = 20, status } = req.query;
     const filter = { shopId };
     if (status) filter.status = status;
@@ -150,6 +194,9 @@ export const getShopOrders = async (req, res) => {
 export const deliverOrder = async (req, res) => {
   try {
     const shopId = req.user.shopId;
+    if (!shopId && !hasGlobalStaffInventory(req)) {
+      return res.status(404).json({ success: false, message: "No shop assigned to this user" });
+    }
     const order = await Order.findOne({ _id: req.params.id, shopId });
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
     if (order.status !== "pending") {
@@ -170,6 +217,9 @@ export const deliverOrder = async (req, res) => {
 export const cancelOrder = async (req, res) => {
   try {
     const shopId = req.user.shopId;
+    if (!shopId && !hasGlobalStaffInventory(req)) {
+      return res.status(404).json({ success: false, message: "No shop assigned to this user" });
+    }
     const { reason = "" } = req.body;
     const order = await Order.findOne({ _id: req.params.id, shopId });
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -200,6 +250,9 @@ export const cancelOrder = async (req, res) => {
 export const getOrderStats = async (req, res) => {
   try {
     const shopId = req.user.shopId;
+    if (!shopId && !hasGlobalStaffInventory(req)) {
+      return res.status(404).json({ success: false, message: "No shop assigned to this user" });
+    }
     const [total, pending, delivered, cancelled] = await Promise.all([
       Order.countDocuments({ shopId }),
       Order.countDocuments({ shopId, status: "pending" }),

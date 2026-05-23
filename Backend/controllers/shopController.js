@@ -1,4 +1,5 @@
 import Shop from "../model/shop.js";
+import Product from "../model/product.js";
 import User from "../model/user.js";
 
 const DEFAULT_SHOP_PASSWORD = "123456";
@@ -178,6 +179,22 @@ export const toggleShopStatus = async (req, res) => {
 export const getMyShop = async (req, res) => {
   try {
     if (!req.user.shopId) {
+      if (req.user.role === "staff") {
+        const products = await Product.find({ status: "active" })
+          .sort("name")
+          .lean({ virtuals: true });
+
+        return res.json({
+          success: true,
+          data: {
+            _id: null,
+            name: "Super Admin Inventory",
+            code: "SUPER-ADMIN",
+            products: products.map((product) => ({ product })),
+          },
+        });
+      }
+
       return res.status(404).json({ success: false, message: "No shop assigned to this user" });
     }
 

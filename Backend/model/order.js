@@ -35,7 +35,7 @@ const orderSchema = new mongoose.Schema(
     shopId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Shop",
-      required: true,
+      default: null,
     },
     takenBy: {
       type: mongoose.Schema.Types.ObjectId,

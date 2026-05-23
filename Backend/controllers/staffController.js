@@ -4,12 +4,12 @@ import { uploadToCloud, deleteFromCloud } from "../utils/CloudUpload.js";
 
 const DEFAULT_STAFF_PASSWORD = "123456";
 
+const staffScope = (req) =>
+  req.user.role === "super_admin" ? { shopId: null } : { shopId: req.user.shopId };
+
 export const getMyStaff = async (req, res) => {
   try {
-    const shopId = req.user.shopId;
-    const staff = await Staff.find({ shopId }).lean();
-    // Attach user info
-    const userIds = staff.map((s) => s._id); // staffId stored in User.staffId
+    const staff = await Staff.find(staffScope(req)).lean();
     res.json({ success: true, data: staff });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -18,7 +18,7 @@ export const getMyStaff = async (req, res) => {
 
 export const createStaff = async (req, res) => {
   try {
-    const shopId = req.user.shopId;
+    const shopId = req.user.role === "super_admin" ? null : req.user.shopId;
     const { name, email, phone, designation, gender, age, address } = req.body;
 
     if (!name?.trim() || !email?.trim()) {
@@ -155,7 +155,7 @@ export const createStaff = async (req, res) => {
 export const updateStaff = async (req, res) => {
   try {
     const { id } = req.params;
-    const shopId = req.user.shopId;
+    const scope = staffScope(req);
     const { name, phone, designation, gender, age, address } = req.body;
 
     if (!name?.trim()) {
@@ -178,7 +178,7 @@ export const updateStaff = async (req, res) => {
         .json({ success: false, message: "Age must be between 18 and 100" });
     }
 
-    const existing = await Staff.findOne({ _id: id, shopId });
+    const existing = await Staff.findOne({ _id: id, ...scope });
     if (!existing) {
       return res
         .status(404)
@@ -220,8 +220,7 @@ export const updateStaff = async (req, res) => {
 
 export const deleteStaff = async (req, res) => {
   try {
-    const shopId = req.user.shopId;
-    const staff = await Staff.findOne({ _id: req.params.id, shopId });
+    const staff = await Staff.findOne({ _id: req.params.id, ...staffScope(req) });
     if (!staff)
       return res
         .status(404)
@@ -238,8 +237,7 @@ export const deleteStaff = async (req, res) => {
 
 export const toggleStaffStatus = async (req, res) => {
   try {
-    const shopId = req.user.shopId;
-    const staff = await Staff.findOne({ _id: req.params.id, shopId });
+    const staff = await Staff.findOne({ _id: req.params.id, ...staffScope(req) });
     if (!staff)
       return res
         .status(404)

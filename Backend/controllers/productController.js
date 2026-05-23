@@ -50,8 +50,8 @@ export const getAllProducts = async (req, res) => {
       maxPrice,
     } = req.query;
 
-    /* ── super_admin: query Product collection directly ── */
-    if (req.user.role === "super_admin") {
+    /* ── super_admin and global staff: query Product collection directly ── */
+    if (req.user.role === "super_admin" || (req.user.role === "staff" && !req.user.shopId)) {
       const filter = {};
       if (search) filter.$text = { $search: search };
       if (category) filter.category = category;
@@ -152,7 +152,7 @@ export const getAllProducts = async (req, res) => {
 ───────────────────────────────────────────────────────────── */
 export const getProductById = async (req, res) => {
   try {
-    if (req.user.role === "super_admin") {
+    if (req.user.role === "super_admin" || (req.user.role === "staff" && !req.user.shopId)) {
       const product = await Product.findById(req.params.id).lean({
         virtuals: true,
       });
@@ -474,8 +474,8 @@ export const bulkDelete = async (req, res) => {
 ───────────────────────────────────────────────────────────── */
 export const getProductStats = async (req, res) => {
   try {
-    /* ── super_admin: aggregate on master Product collection ── */
-    if (req.user.role === "super_admin") {
+    /* ── super_admin and global staff: aggregate on master Product collection ── */
+    if (req.user.role === "super_admin" || (req.user.role === "staff" && !req.user.shopId)) {
       const [stats] = await Product.aggregate([
         {
           $group: {

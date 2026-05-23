@@ -48,7 +48,7 @@ const staffSchema = new mongoose.Schema(
     shopId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Shop",
-      required: true,
+      default: null,
     },
     isActive: {
       type: Boolean,
