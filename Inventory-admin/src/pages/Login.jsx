@@ -195,12 +195,28 @@ export default function Login() {
 
           {/* Demo */}
           <div className="mt-6 t-card rounded-xl px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-2 t-text-muted">
-              Demo Credentials
+            <p className="text-xs font-semibold uppercase tracking-widest t-text-muted">
+              Demo Super Admin
             </p>
-            <p className="text-xs font-mono leading-relaxed t-text-sec">
+            <p className="text-xs font-mono leading-relaxed t-text-sec mb-2">
               Email: superadmin@gmail.com <br />
               Password: admin
+            </p>
+            <hr />
+            <p className="text-xs font-semibold uppercase tracking-widest mt-2 t-text-muted">
+              Demo Shop 
+            </p>
+            <p className="text-xs font-mono leading-relaxed t-text-sec mb-2">
+              Email: nik@gmail.com <br />
+              Password: 123456
+            </p>
+            <hr />
+            <p className="text-xs font-semibold uppercase tracking-widest mt-2 t-text-muted">
+              Demo Staff 
+            </p>
+            <p className="text-xs font-mono leading-relaxed t-text-sec">
+              Email: trilok@gmail.com <br />
+              Password: 123456
             </p>
           </div>
         </div>

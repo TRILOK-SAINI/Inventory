@@ -557,6 +557,14 @@ function NewOrderModal({ shopProducts, onClose, onSuccess }) {
 }
 
 /* ── Main StaffOrders page ─────────────────────────────────── */
+const mapShopProducts = (shopData) =>
+  (shopData?.products || [])
+    .filter((item) => item.product)
+    .map((item) => item.product)
+    .filter((product) => product.status === "active")
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+    .map((product) => ({ product }));
+
 export default function StaffOrders() {
   useTheme();
   const [shop, setShop] = useState(null);
@@ -575,30 +583,17 @@ export default function StaffOrders() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchShop = async () => {
+  const fetchShop = useCallback(async () => {
     try {
       const { data } = await api.get("/shops/my-shop");
-      if (data.success) setShop(data.data);
+      if (data.success) {
+        setShop(data.data);
+        setShopProducts(mapShopProducts(data.data));
+      }
     } catch (err) {
       console.error(getApiError(err));
     }
-  };
-
-  const fetchShopProducts = async () => {
-    try {
-      const { data } = await api.get("/products", {
-        params: { limit: 100, status: "active", sort: "name" },
-      });
-      if (!data.success) throw new Error(data.message);
-      setShopProducts(
-        data.data.map((product) => ({
-          product,
-        })),
-      );
-    } catch (err) {
-      setError(getApiError(err));
-    }
-  };
+  }, []);
 
   const fetchOrders = useCallback(
     async (page = 1) => {
@@ -620,10 +615,8 @@ export default function StaffOrders() {
   );
 
   useEffect(() => {
-    Promise.all([fetchShop(), fetchShopProducts()]).finally(() =>
-      setLoading(false),
-    );
-  }, []);
+    fetchShop().finally(() => setLoading(false));
+  }, [fetchShop]);
 
   useEffect(() => {
     fetchOrders(1);
@@ -665,7 +658,6 @@ export default function StaffOrders() {
     setShowNewOrder(false);
     fetchOrders(1);
     fetchShop();
-    fetchShopProducts();
   };
 
   if (loading) {

@@ -51,6 +51,14 @@ const StatCard = ({ label, value, icon: Icon, color, onClick }) => (
   </div>
 );
 
+const mapShopProducts = (shopData) =>
+  (shopData?.products || [])
+    .filter((item) => item.product)
+    .map((item) => item.product)
+    .filter((product) => product.status === "active")
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+    .slice(0, 6);
+
 export default function StaffDashboard() {
   useTheme();
   const navigate = useNavigate();
@@ -63,16 +71,15 @@ export default function StaffDashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [shopRes, statsRes, productsRes] = await Promise.all([
+        const [shopRes, statsRes] = await Promise.all([
           api.get("/shops/my-shop"),
           api.get("/orders/stats"),
-          api.get("/products", {
-            params: { page: 1, limit: 6, status: "active", sort: "name" },
-          }),
         ]);
-        if (shopRes.data.success) setShop(shopRes.data.data);
+        if (shopRes.data.success) {
+          setShop(shopRes.data.data);
+          setProducts(mapShopProducts(shopRes.data.data));
+        }
         if (statsRes.data.success) setStats(statsRes.data.data);
-        if (productsRes.data.success) setProducts(productsRes.data.data);
       } catch (err) {
         setError(getApiError(err));
       } finally {
@@ -137,9 +144,9 @@ export default function StaffDashboard() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
             style={{ background: "var(--accent)", color: "#fff" }}
           >
-            <ShoppingCart size={14} /> New Order
+            <ShoppingCart size={14} /> Orders
           </button>
-          <button
+          {/* <button
             onClick={() => navigate("/admin/orders")}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
             style={{
@@ -149,7 +156,7 @@ export default function StaffDashboard() {
             }}
           >
             <ShoppingCart size={14} /> Orders
-          </button>
+          </button> */}
         </div>
       </div>
 
