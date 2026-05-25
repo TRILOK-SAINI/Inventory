@@ -14,6 +14,7 @@ import StaffDashboard from "./pages/StaffDashboard";
 import StaffOrders from "./pages/StaffOrders";
 import InventoryEntry from "./pages/InventoryEntry";
 import StockReport from "./pages/StockReport";
+import OrderReport from "./pages/OrderReport";
 
 export default function App() {
   return (
@@ -79,12 +80,21 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="stock-report"
           element={
             <ProtectedRoute allowedRoles={["super_admin"]}>
               <StockReport />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="order-report"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <OrderReport />
             </ProtectedRoute>
           }
         />

@@ -13,11 +13,13 @@ import {
   FaWarehouse,
   FaShoppingCart,
   FaChartBar,
+  FaFileInvoiceDollar,
 } from "react-icons/fa";
 import { useState } from "react";
 import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
+/* ── Nav sections by role ─────────────────────────────────── */
 const getNavSections = (role) => {
   if (role === "super_admin") {
     return [
@@ -57,11 +59,16 @@ const getNavSections = (role) => {
                 icon: <FaWarehouse />,
               },
               {
-                name: "Reports",
+                name: "Stock Reports",
                 path: "/admin/stock-report",
                 icon: <FaChartBar />,
               },
             ],
+          },
+          {
+            name: "Order Reports",
+            path: "/admin/order-report",
+            icon: <FaFileInvoiceDollar />,
           },
         ],
       },
@@ -78,7 +85,11 @@ const getNavSections = (role) => {
             path: "/admin/shop-dashboard",
             icon: <FaStoreAlt />,
           },
-          { name: "Orders", path: "/admin/orders", icon: <FaShoppingCart /> },
+          {
+            name: "Orders",
+            path: "/admin/orders",
+            icon: <FaShoppingCart />,
+          },
           { name: "Staff", path: "/admin/staff", icon: <FaUsers /> },
         ],
       },
@@ -95,7 +106,11 @@ const getNavSections = (role) => {
             path: "/admin/staff-dashboard",
             icon: <FaTachometerAlt />,
           },
-          { name: "Orders", path: "/admin/orders", icon: <FaShoppingCart /> },
+          {
+            name: "Orders",
+            path: "/admin/orders",
+            icon: <FaShoppingCart />,
+          },
         ],
       },
     ];
@@ -104,13 +119,10 @@ const getNavSections = (role) => {
   return [];
 };
 
+/* ── NavItem ──────────────────────────────────────────────── */
 const NavItem = ({ link, closeSidebar }) => {
-  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
   const hasSubLinks = link.subLinks && link.subLinks.length > 0;
-  const hasActiveSubLink = hasSubLinks
-    ? link.subLinks.some((sub) => location.pathname === sub.path)
-    : false;
-  const [isOpen, setIsOpen] = useState(hasActiveSubLink);
 
   if (hasSubLinks) {
     return (
@@ -120,20 +132,14 @@ const NavItem = ({ link, closeSidebar }) => {
           className="t-nav-link w-full flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
-            <span
-              className="text-xs"
-              style={{
-                color: hasActiveSubLink
-                  ? "var(--accent)"
-                  : "var(--text-muted)",
-              }}
-            >
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               {link.icon}
             </span>
             {link.name}
           </div>
           {isOpen ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
         </button>
+
         {isOpen && (
           <div
             className="ml-7 space-y-1 border-l"
@@ -145,10 +151,9 @@ const NavItem = ({ link, closeSidebar }) => {
                 to={sub.path}
                 onClick={closeSidebar}
                 className={({ isActive }) =>
-                  `t-nav-link text-sm py-1.5 flex items-center gap-2 ${isActive ? "active" : ""}`
+                  `t-nav-link text-sm py-1.5 ${isActive ? "active" : ""}`
                 }
               >
-                <span className="text-[11px]">{sub.icon}</span>
                 {sub.name}
               </NavLink>
             ))}
@@ -185,10 +190,11 @@ const NavItem = ({ link, closeSidebar }) => {
   );
 };
 
+/* ── Sidebar ──────────────────────────────────────────────── */
 export default function Sidebar({ closeSidebar }) {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  useTheme();
+  const { theme } = useTheme();
 
   const navSections = getNavSections(user?.role);
 
@@ -203,6 +209,7 @@ export default function Sidebar({ closeSidebar }) {
 
   return (
     <div className="flex flex-col h-full t-sidebar w-56">
+      {/* ── Brand ─────────────────────────────────────────── */}
       {closeSidebar && (
         <div
           className="flex items-center justify-between px-5 py-4 shrink-0"
@@ -220,6 +227,7 @@ export default function Sidebar({ closeSidebar }) {
         </div>
       )}
 
+      {/* ── Nav ───────────────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {navSections.map((section) => (
           <div key={section.label}>
@@ -242,6 +250,7 @@ export default function Sidebar({ closeSidebar }) {
         ))}
       </nav>
 
+      {/* ── User info ─────────────────────────────────────── */}
       {user && (
         <div
           className="px-4 py-3 shrink-0 mx-3 mb-2 rounded-xl"
@@ -279,6 +288,7 @@ export default function Sidebar({ closeSidebar }) {
         </div>
       )}
 
+      {/* ── Logout ────────────────────────────────────────── */}
       <div className="px-3 pb-4 shrink-0">
         <button
           onClick={handleLogout}
@@ -297,7 +307,8 @@ export default function Sidebar({ closeSidebar }) {
             e.currentTarget.style.borderColor = "transparent";
           }}
         >
-          <FaSignOutAlt size={13} /> Sign Out
+          <FaSignOutAlt size={13} />
+          Sign Out
         </button>
       </div>
     </div>
